@@ -40,7 +40,7 @@ const Home = () => (
           className="p-4 shadow rounded-4"
           style={{ backgroundColor: 'rgba(255,255,255,0.95)' }}
         >
-          <h3 className="fw-bold mb-3">Sign Up</h3>
+          <h3 className="fw-bold mb-3">Sign Up to Begin Playing!</h3>
         </Card>
       </Col>
     </Row>
