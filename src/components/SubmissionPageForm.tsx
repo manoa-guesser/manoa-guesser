@@ -2,9 +2,10 @@
 
 import { useSession } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
-import { Button, Card, Col, Container, Form, Row } from 'react-bootstrap';
+import { Button, Card, Col, Container, Form, Row, Image } from 'react-bootstrap';
 import swal from 'sweetalert';
 import { redirect } from 'next/navigation';
+import { useState } from 'react';
 
 interface SubmissionData {
   image: FileList;
@@ -15,6 +16,8 @@ interface SubmissionData {
 
 const SubmissionForm: React.FC = () => {
   const { data: session, status } = useSession();
+  const [preview, setPreview] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -25,11 +28,21 @@ const SubmissionForm: React.FC = () => {
   if (status === 'loading') return <p>Loading...</p>;
   if (status === 'unauthenticated') redirect('/auth/signin');
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const imageURL = URL.createObjectURL(file);
+      setPreview(imageURL);
+    } else {
+      setPreview(null);
+    }
+  };
+
   const onSubmit = async (data: SubmissionData) => {
     const formData = new FormData();
     formData.append('image', data.image[0]);
     formData.append('caption', data.caption);
-    formData.append('location', data.location); // GPS coordinate
+    formData.append('location', data.location);
     formData.append('submittedBy', session?.user?.email || '');
 
     await fetch('/api/submissions', {
@@ -39,6 +52,7 @@ const SubmissionForm: React.FC = () => {
 
     swal('Success', 'Your image has been submitted!', 'success', { timer: 2000 });
     reset();
+    setPreview(null);
   };
 
   return (
@@ -56,9 +70,23 @@ const SubmissionForm: React.FC = () => {
                     type="file"
                     accept="image/*"
                     {...register('image', { required: 'Image is required' })}
+                    onChange={handleImageChange}
                   />
                   {errors.image && <div className="text-danger small">{errors.image.message}</div>}
                 </Form.Group>
+
+                {/* Preview */}
+                {preview && (
+                  <div className="text-center mb-3">
+                    <Image
+                      src={preview}
+                      alt="Preview"
+                      fluid
+                      rounded
+                      style={{ maxHeight: '250px', objectFit: 'contain' }}
+                    />
+                  </div>
+                )}
 
                 {/* Caption */}
                 <Form.Group className="mb-3">
@@ -86,7 +114,14 @@ const SubmissionForm: React.FC = () => {
                 <Button type="submit" variant="primary" className="me-2">
                   Submit
                 </Button>
-                <Button type="button" variant="secondary" onClick={() => reset()}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    reset();
+                    setPreview(null);
+                  }}
+                >
                   Reset
                 </Button>
               </Form>
