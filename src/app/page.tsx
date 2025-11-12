@@ -10,22 +10,27 @@ const Home = () => (
           className="display-3 fw-bold"
           style={{
             color: 'white',
-            fontWeight: 900,
-            letterSpacing: '2px',
-            WebkitTextStroke: '2px red',
-            textShadow: '0px 6px 14px rgba(0,0,0,0.75)',
+            textShadow: `
+              -2px -2px 0 red,
+              2px -2px 0 red,
+              -2px  2px 0 red,
+              2px  2px 0 red
+            `,
           }}
         >
-          EXPLORE UH MANOA
+          EXPLORE UH MANOA!
         </h1>
 
         <p
           className="fs-3 text-white"
           style={{
-            fontWeight: 700,
-            letterSpacing: '1.5px',
-            WebkitTextStroke: '1px red',
-            textShadow: '0px 4px 10px rgba(0,0,0,0.8)',
+            color: 'white',
+            textShadow: `
+              -1px -1px 0 red,
+              1px -1px 0 red,
+              -1px  1px 0 red,
+              1px  1px 0 red
+            `,
           }}
         >
           Discover the Manoa campus like never before!
