@@ -1,14 +1,22 @@
 html,
 body {
+  --bs-dark: var(--nat-navbar-bg);
   --bs-light-rgb: 236, 236, 236;
+  --bs-dark-rgb: var(--nat-navbar-bg-rgb);
   box-sizing: border-box;
   height: 100%;
   padding: 0;
   margin: 0;
+  background: fixed center url("/homepage_background.webp");
+  background-size: cover;
 }
+
 .wrapper {
   box-sizing: border-box;
   min-height: 100%;
   display: flex;
   flex-direction: column;
 }
+
+
+
