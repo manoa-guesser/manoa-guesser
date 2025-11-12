@@ -34,7 +34,8 @@ export default function LeaderboardPage() {
       <h1 className="text-3xl font-bold mb-4 text-center">Leaderboard</h1>
       <div className="d-flex justify-content-center mb-3">
         <Button onClick={sortByScore} variant="primary">
-          Sort by Score {sortAsc ? '▲' : '▼'}
+          Sort by Score
+          {sortAsc ? '▲' : '▼'}
         </Button>
       </div>
 
