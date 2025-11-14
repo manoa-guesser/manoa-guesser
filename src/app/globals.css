@@ -18,11 +18,28 @@ body {
   flex-direction: column;
 }
 
-.card {
-  border: 2px solid green !important;
-  border-radius: 30px;          /* optional */
-  background-color: rgba(255, 255, 255, 0.98) !important;
-  box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); /* optional glow */
+.home-card {
+  border: 2px solid green;
+  border-radius: 30px;
+  background-color: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 0 20px rgba(9, 99, 9, 0.8);
   padding: 1.5rem;
 }
 
+.hero-title {
+  color: white;
+  text-shadow:
+    -2px -2px 0 red,
+     2px -2px 0 red,
+    -2px  2px 0 red,
+     2px  2px 0 red;
+}
+
+.hero-subtitle {
+  color: white;
+  text-shadow:
+    -1px -1px 0 red,
+     1px -1px 0 red,
+    -1px  1px 0 red,
+     1px  1px 0 red;
+}
