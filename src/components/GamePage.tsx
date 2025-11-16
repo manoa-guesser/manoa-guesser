@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Button, Card, Col, Container, Form, Row, ProgressBar } from 'react-bootstrap';
 import swal from 'sweetalert';
 
@@ -10,13 +11,12 @@ interface GameQuestion {
   correctAnswer: string;
 }
 
-// Example questions, replace with your backend API
 const questions: GameQuestion[] = [
-  { id: 1, imageUrl: 'hamilton.jpg', correctAnswer: 'Library' },
-  { id: 2, imageUrl: 'campus-center.jpg', correctAnswer: 'Campus Center' },
+  { id: 1, imageUrl: '/hamilton.jpg', correctAnswer: 'Library' },
+  { id: 2, imageUrl: '/campus-center.jpg', correctAnswer: 'Campus Center' },
 ];
 
-const GAME_TIME = 20; // seconds per question
+const GAME_TIME = 20;
 
 const GamePage: React.FC = () => {
   const [isGameStarted, setIsGameStarted] = useState(false);
@@ -28,12 +28,29 @@ const GamePage: React.FC = () => {
 
   const currentQuestion = questions[currentQuestionIndex];
 
+  // Handle when time expires
+  const endGame = useCallback(() => {
+    setIsGameOver(true);
+    swal('Game Over!', `Your final score: ${score} / ${questions.length}`, 'info', { timer: 3000 });
+  }, [score]);
+
+  const handleTimeUp = useCallback(() => {
+    if (currentQuestionIndex + 1 < questions.length) {
+      setCurrentQuestionIndex((prev) => prev + 1);
+      setUserAnswer('');
+      setTimer(GAME_TIME);
+    } else {
+      endGame();
+    }
+  }, [currentQuestionIndex, endGame]);
+
   // Countdown timer
   useEffect(() => {
-    if (!isGameStarted || isGameOver) return;
+    if (!isGameStarted || isGameOver) return undefined;
+
     if (timer <= 0) {
       handleTimeUp();
-      return;
+      return undefined;
     }
 
     const interval = setInterval(() => {
@@ -41,7 +58,7 @@ const GamePage: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timer, isGameStarted, isGameOver, currentQuestionIndex]);
+  }, [timer, isGameStarted, isGameOver, handleTimeUp]);
 
   const startGame = () => {
     setIsGameStarted(true);
@@ -52,37 +69,23 @@ const GamePage: React.FC = () => {
     setTimer(GAME_TIME);
   };
 
-  const handleTimeUp = () => {
-    if (currentQuestionIndex + 1 < questions.length) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setUserAnswer('');
-      setTimer(GAME_TIME);
-    } else {
-      endGame();
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Update score if correct
-    if (userAnswer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase()) {
+    if (
+      userAnswer.trim().toLowerCase()
+      === currentQuestion.correctAnswer.toLowerCase()
+    ) {
       setScore((prev) => prev + 1);
     }
 
-    // Move to next question or finish
     if (currentQuestionIndex + 1 < questions.length) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setCurrentQuestionIndex((prev) => prev + 1);
       setUserAnswer('');
       setTimer(GAME_TIME);
     } else {
       endGame();
     }
-  };
-
-  const endGame = () => {
-    setIsGameOver(true);
-    swal('Game Over!', `Your final score: ${score} / ${questions.length}`, 'info', { timer: 3000 });
   };
 
   return (
@@ -98,16 +101,26 @@ const GamePage: React.FC = () => {
                   <Button variant="primary" size="lg" onClick={startGame}>
                     Start Game
                   </Button>
-                  {isGameOver && <div className="mt-3">Your last score: {score} / {questions.length}</div>}
+
+                  {isGameOver && (
+                    <div className="mt-3">
+                      <div>Your last score:</div>
+                      <div>{score}</div>
+                      <div>/</div>
+                      <div>{questions.length}</div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>
                   <div className="text-center mb-3">
-                    <img
+                    <Image
                       src={currentQuestion.imageUrl}
                       alt="Campus location"
-                      className="img-fluid rounded"
-                      style={{ maxHeight: '400px', objectFit: 'cover' }}
+                      width={500}
+                      height={350}
+                      className="rounded"
+                      style={{ objectFit: 'cover' }}
                     />
                   </div>
 
@@ -134,7 +147,11 @@ const GamePage: React.FC = () => {
                     <Button type="submit" variant="primary" className="w-100 mb-2">
                       Submit
                     </Button>
-                    <div className="text-center">Score: {score}</div>
+
+                    <div className="text-center">
+                      <div>Score:</div>
+                      <div>{score}</div>
+                    </div>
                   </Form>
                 </>
               )}
