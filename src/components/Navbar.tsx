@@ -24,13 +24,13 @@ const NavBar: React.FC = () => {
             {currentUser
               ? [
                   <Nav.Link id="add-stuff-nav" href="/add" key="add" active={pathName === '/add'}>
-                    Add Stuff
+                    Game
                   </Nav.Link>,
                   <Nav.Link id="list-stuff-nav" href="/list" key="list" active={pathName === '/list'}>
                     List Stuff
                   </Nav.Link>,
-                  <Nav.Link id="leaderboard-nav" href="/leaderboard" key="leaderboard" active={pathName === '/leaderboard'}>
-                    Leaderboard
+                  <Nav.Link id="submission-nav" href="/submission" key="submission" active={pathName === '/submission'}>
+                    Submission
                   </Nav.Link>,
                 ]
               : ''}
