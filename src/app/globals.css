@@ -43,3 +43,22 @@ body {
     -1px  1px 0 red,
      1px  1px 0 red;
 }
+
+.custom-navbar {
+  background-color: #004d00 !important;  /* UH green */
+  border-bottom: 3px solid #ffffff;      /* Optional accent */
+}
+
+.custom-navbar .navbar-brand,
+.custom-navbar .nav-link,
+.custom-navbar .dropdown-toggle {
+  color: white !important;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.custom-navbar .nav-link:hover,
+.custom-navbar .dropdown-item:hover {
+  color: #ff3b3b !important;  /* Yellow hover */
+}
+

@@ -15,19 +15,41 @@ const NavBar: React.FC = () => {
   const pathName = usePathname();
 
   return (
-    <Navbar bg="light" expand="lg">
+    <Navbar expand="lg" className="custom-navbar">
       <Container>
-        <Navbar.Brand href="/">Next.js Application Template</Navbar.Brand>
+        <Navbar.Brand href="/">Manoa Guesser</Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto justify-content-start">
             {currentUser
               ? [
-                  <Nav.Link id="add-stuff-nav" href="/add" key="add" active={pathName === '/add'}>
-                    Game
+                  // TODO:
+                  // Edit id for the correct pages
+                  <Nav.Link
+                    id="submission-nav"
+                    href="/submission"
+                    key="submission"
+                    active={pathName === '/submission'}
+                  >
+                    Submission
                   </Nav.Link>,
-                  <Nav.Link id="list-stuff-nav" href="/list" key="list" active={pathName === '/list'}>
-                    List Stuff
+
+                  <Nav.Link
+                    id="leaderboard-nav"
+                    href="/leaderboard"
+                    key="leaderboard"
+                    active={pathName === '/leaderboard'}
+                  >
+                    Leaderboard
+                  </Nav.Link>,
+
+                  <Nav.Link
+                    id="game-nav"
+                    href="/game"
+                    key="add"
+                    active={pathName === '/game'}
+                  >
+                    Let&apos;s Play!
                   </Nav.Link>,
                   <Nav.Link id="submission-nav" href="/submission" key="submission" active={pathName === '/submission'}>
                     Submission
@@ -36,7 +58,7 @@ const NavBar: React.FC = () => {
               : ''}
             {currentUser && role === 'ADMIN' ? (
               <Nav.Link id="admin-stuff-nav" href="/admin" key="admin" active={pathName === '/admin'}>
-                Admin
+                Admin Dashboard
               </Nav.Link>
             ) : (
               ''
