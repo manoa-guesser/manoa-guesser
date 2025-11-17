@@ -24,13 +24,30 @@ const NavBar: React.FC = () => {
               ? [
                   // TODO:
                   // Edit id for the correct pages
-                  <Nav.Link id="add-stuff-nav" href="/add" key="add" active={pathName === '/add'}>
+                  <Nav.Link
+                    id="add-stuff-nav"
+                    href="/add"
+                    key="add"
+                    active={pathName === '/add'}
+                  >
                     Submit Image
                   </Nav.Link>,
-                  <Nav.Link id="list-stuff-nav" href="/list" key="list" active={pathName === '/list'}>
+
+                  <Nav.Link
+                    id="leaderboard-nav"
+                    href="/leaderboard"
+                    key="leaderboard"
+                    active={pathName === '/leaderboard'}
+                  >
                     Leaderboard
                   </Nav.Link>,
-                  <Nav.Link id="add-stuff-nav" href="/add" key="add" active={pathName === '/add'}>
+
+                  <Nav.Link
+                    id="game-nav"
+                    href="/game"
+                    key="add"
+                    active={pathName === '/game'}
+                  >
                     Let&apos;s Play!
                   </Nav.Link>,
                 ]
