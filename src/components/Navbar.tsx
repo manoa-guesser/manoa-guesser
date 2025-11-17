@@ -22,6 +22,8 @@ const NavBar: React.FC = () => {
           <Nav className="me-auto justify-content-start">
             {currentUser
               ? [
+                  // TODO:
+                  // Edit id for the correct pages
                   <Nav.Link id="add-stuff-nav" href="/add" key="add" active={pathName === '/add'}>
                     Submit Image
                   </Nav.Link>,
