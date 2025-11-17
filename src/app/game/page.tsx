@@ -17,7 +17,7 @@ const questions: GameQuestion[] = [
   { id: 3, imageUrl: '/kuykendall.png ', correctAnswer: 'Kuykendall Hall' },
   { id: 4, imageUrl: '/frear-hall.png', correctAnswer: 'Frear Hall' },
   { id: 5, imageUrl: '/sakamaki.png', correctAnswer: 'Sakamaki Hall' },
-  { id: 6, imageUrl: '/life-sciences-building', correctAnswer: "Life Sciences Building" },
+  { id: 6, imageUrl: '/life-sciences-building', correctAnswer: 'Life Sciences Building' },
   { id: 7, imageUrl: '/holmes-hall.jpg', correctAnswer: 'Holmes Hall' },
   { id: 8, imageUrl: '/hawaii-hall.png', correctAnswer: 'Hawaii Hall' },
   { id: 9, imageUrl: '/east-west-center.jpg', correctAnswer: 'East West Center' },
