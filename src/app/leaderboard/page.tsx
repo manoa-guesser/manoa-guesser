@@ -22,16 +22,21 @@ export default function LeaderboardPage() {
   const [sortAsc, setSortAsc] = useState(true);
 
   const sortByScore = () => {
-    const sorted = [...players].sort((a, b) =>
-      sortAsc ? a.score - b.score : b.score - a.score
-    );
+    const sorted = [...players].sort((a, b) => {
+      if (sortAsc) {
+        return a.score - b.score;
+      }
+      return b.score - a.score;
+    });
+
     setPlayers(sorted);
-    setSortAsc(!sortAsc);
+    setSortAsc((prev) => !prev);
   };
 
   return (
     <main className="p-5">
       <h1 className="text-3xl font-bold mb-4 text-center">Leaderboard</h1>
+
       <div className="d-flex justify-content-center mb-3">
         <Button onClick={sortByScore} variant="primary">
           Sort by Score
