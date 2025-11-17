@@ -25,12 +25,12 @@ const NavBar: React.FC = () => {
                   // TODO:
                   // Edit id for the correct pages
                   <Nav.Link
-                    id="add-stuff-nav"
-                    href="/add"
-                    key="add"
-                    active={pathName === '/add'}
+                    id="submission-nav"
+                    href="/submission"
+                    key="submission"
+                    active={pathName === '/submission'}
                   >
-                    Submit Image
+                    Submission
                   </Nav.Link>,
 
                   <Nav.Link
