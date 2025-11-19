@@ -16,13 +16,12 @@ const questions: GameQuestion[] = [
   { id: 2, imageUrl: '/campus-center.jpg', correctAnswer: 'Campus Center' },
   { id: 3, imageUrl: '/kuykendall.png ', correctAnswer: 'Kuykendall Hall' },
   { id: 4, imageUrl: '/frear-hall.png', correctAnswer: 'Frear Hall' },
-  { id: 5, imageUrl: '/sakamaki.png', correctAnswer: 'Sakamaki Hall' },
-  { id: 6, imageUrl: '/life-sciences-building', correctAnswer: 'Life Sciences Building' },
-  { id: 7, imageUrl: '/holmes-hall.jpg', correctAnswer: 'Holmes Hall' },
+  { id: 5, imageUrl: '/sakamaki-hall.png', correctAnswer: 'Sakamaki Hall' },
+  { id: 6, imageUrl: '/life-sciences-building.png', correctAnswer: 'Life Sciences Building' },
+  { id: 7, imageUrl: '/holmes-hall.png', correctAnswer: 'Holmes Hall' },
   { id: 8, imageUrl: '/hawaii-hall.png', correctAnswer: 'Hawaii Hall' },
-  { id: 9, imageUrl: '/east-west-center.jpg', correctAnswer: 'East West Center' },
-  { id: 10, imageUrl: '/japanese-garden.jpg', correctAnswer: 'Japanese Garden' },
-
+  { id: 9, imageUrl: '/east-west-complex.png', correctAnswer: 'East West Center' },
+  { id: 10, imageUrl: '/japanese-garden.png', correctAnswer: 'Japanese Garden' },
 ];
 
 const GAME_TIME = 20;
@@ -37,29 +36,35 @@ const GamePage: React.FC = () => {
 
   const currentQuestion = questions[currentQuestionIndex];
 
-  // Handle when time expires
-  const endGame = useCallback(() => {
+  // ---- FIXED: endGame now takes finalScore ----
+  const endGame = useCallback((finalScore: number) => {
     setIsGameOver(true);
-    swal('Game Over!', `Your final score: ${score} / ${questions.length}`, 'info', { timer: 3000 });
-  }, [score]);
+    swal(
+      'Game Over!',
+      `Your final score: ${finalScore} / ${questions.length}`,
+      'info',
+      { timer: 3000 }
+    );
+  }, []);
 
+  // Handle time expiring
   const handleTimeUp = useCallback(() => {
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
       setUserAnswer('');
       setTimer(GAME_TIME);
     } else {
-      endGame();
+      endGame(score); // no change to score on timeout
     }
-  }, [currentQuestionIndex, endGame]);
+  }, [currentQuestionIndex, score, endGame]);
 
   // Countdown timer
   useEffect(() => {
-    if (!isGameStarted || isGameOver) return undefined;
+    if (!isGameStarted || isGameOver) return;
 
     if (timer <= 0) {
       handleTimeUp();
-      return undefined;
+      return;
     }
 
     const interval = setInterval(() => {
@@ -78,22 +83,24 @@ const GamePage: React.FC = () => {
     setTimer(GAME_TIME);
   };
 
+  // ---- FIXED: updatedScore ensures correct popup ----
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      userAnswer.trim().toLowerCase()
-      === currentQuestion.correctAnswer.toLowerCase()
-    ) {
-      setScore((prev) => prev + 1);
-    }
+    const guessCorrect =
+      userAnswer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
 
+    const updatedScore = guessCorrect ? score + 1 : score;
+
+    if (guessCorrect) setScore(updatedScore);
+
+    // Move to next question or end the game
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
       setUserAnswer('');
       setTimer(GAME_TIME);
     } else {
-      endGame();
+      endGame(updatedScore); // ← Correct final score
     }
   };
 
