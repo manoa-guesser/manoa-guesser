@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Table, Button } from 'react-bootstrap';
 
 interface Player {
@@ -17,6 +17,25 @@ export default function LeaderboardPage() {
     { id: 3, name: 'Noah', score: 940 },
     { id: 4, name: 'Mia', score: 760 },
   ]);
+
+  // Fetch real leaderboard data
+  useEffect(() => {
+    const loadLeaderboard = async () => {
+      const res = await fetch('/api/leaderboard');
+      const data = await res.json();
+
+      // Convert API fields to your interface format
+      const formatted = data.map((player: any) => ({
+        id: player.id,
+        name: player.username, // maps username → name
+        score: player.score,
+      }));
+
+      setPlayers(formatted);
+    };
+
+    loadLeaderboard();
+  }, []);
 
   // Track sort direction
   const [sortAsc, setSortAsc] = useState(true);
