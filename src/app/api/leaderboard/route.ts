@@ -1,28 +1,27 @@
 /* eslint-disable import/prefer-default-export */
 
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+export async function GET() {
+  try {
+    const players = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        score: true,
+      },
+      orderBy: {
+        score: 'desc',
+      },
+    });
 
-export const prisma = globalForPrisma.prisma
-  || new PrismaClient({
-    log: ['query', 'info', 'warn', 'error'],
-  });
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
-
-export async function GET(): Promise<NextResponse> {
-  const players = await prisma.user.findMany({
-    select: {
-      id: true,
-      username: true,
-      score: true,
-    },
-    orderBy: { score: 'desc' },
-  });
-
-  return NextResponse.json(players);
+    return NextResponse.json(players);
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: 'Failed to load leaderboard' },
+      { status: 500 },
+    );
+  }
 }
