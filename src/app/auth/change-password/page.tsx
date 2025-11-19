@@ -13,13 +13,13 @@ type ChangePasswordForm = {
   oldpassword: string;
   password: string;
   confirmPassword: string;
-  // acceptTerms: boolean;
 };
 
 /** The change password page. */
 const ChangePassword = () => {
   const { data: session, status } = useSession();
   const email = session?.user?.email || '';
+
   const validationSchema = Yup.object().shape({
     oldpassword: Yup.string().required('Password is required'),
     password: Yup.string()
@@ -41,7 +41,6 @@ const ChangePassword = () => {
   });
 
   const onSubmit = async (data: ChangePasswordForm) => {
-    // console.log(JSON.stringify(data, null, 2));
     await changePassword({ email, ...data });
     await swal('Password Changed', 'Your password has been changed', 'success', { timer: 2000 });
     reset();
@@ -56,12 +55,16 @@ const ChangePassword = () => {
       <Container>
         <Row className="justify-content-center">
           <Col xs={5}>
-            <h1 className="text-center">Change Password</h1>
-            <Card>
+            <h1 className="text-center fw-bold mb-3 hero-title display-7">Change your password</h1>
+            <p className="text-center mb-4 hero-subtitle fs-4">
+              Keep your Manoa Guesser account safe and secure.
+            </p>
+
+            <Card className="p-4 rounded-4 home-card">
               <Card.Body>
                 <Form onSubmit={handleSubmit(onSubmit)}>
-                  <Form.Group className="form-group">
-                    <Form.Label>Old Passord</Form.Label>
+                  <Form.Group className="form-group mb-3">
+                    <Form.Label>Old Password</Form.Label>
                     <input
                       type="password"
                       {...register('oldpassword')}
@@ -70,7 +73,7 @@ const ChangePassword = () => {
                     <div className="invalid-feedback">{errors.oldpassword?.message}</div>
                   </Form.Group>
 
-                  <Form.Group className="form-group">
+                  <Form.Group className="form-group mb-3">
                     <Form.Label>New Password</Form.Label>
                     <input
                       type="password"
@@ -79,8 +82,9 @@ const ChangePassword = () => {
                     />
                     <div className="invalid-feedback">{errors.password?.message}</div>
                   </Form.Group>
-                  <Form.Group className="form-group">
-                    <Form.Label>Confirm Password</Form.Label>
+
+                  <Form.Group className="form-group mb-3">
+                    <Form.Label>Confirm New Password</Form.Label>
                     <input
                       type="password"
                       {...register('confirmPassword')}
@@ -88,15 +92,20 @@ const ChangePassword = () => {
                     />
                     <div className="invalid-feedback">{errors.confirmPassword?.message}</div>
                   </Form.Group>
-                  <Form.Group className="form-group py-3">
+
+                  <Form.Group className="form-group py-2">
                     <Row>
                       <Col>
-                        <Button type="submit" className="btn btn-primary">
+                        <Button type="submit" className="btn btn-primary w-100">
                           Change
                         </Button>
                       </Col>
                       <Col>
-                        <Button type="button" onClick={() => reset()} className="btn btn-warning float-right">
+                        <Button
+                          type="button"
+                          onClick={() => reset()}
+                          className="btn btn-warning float-right w-100"
+                        >
                           Reset
                         </Button>
                       </Col>
