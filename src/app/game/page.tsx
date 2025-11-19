@@ -16,13 +16,12 @@ const questions: GameQuestion[] = [
   { id: 2, imageUrl: '/campus-center.jpg', correctAnswer: 'Campus Center' },
   { id: 3, imageUrl: '/kuykendall.png ', correctAnswer: 'Kuykendall Hall' },
   { id: 4, imageUrl: '/frear-hall.png', correctAnswer: 'Frear Hall' },
-  { id: 5, imageUrl: '/sakamaki.png', correctAnswer: 'Sakamaki Hall' },
-  { id: 6, imageUrl: '/life-sciences-building', correctAnswer: 'Life Sciences Building' },
-  { id: 7, imageUrl: '/holmes-hall.jpg', correctAnswer: 'Holmes Hall' },
+  { id: 5, imageUrl: '/sakamaki-hall.png', correctAnswer: 'Sakamaki Hall' },
+  { id: 6, imageUrl: '/life-sciences-building.png', correctAnswer: 'Life Sciences Building' },
+  { id: 7, imageUrl: '/holmes-hall.png', correctAnswer: 'Holmes Hall' },
   { id: 8, imageUrl: '/hawaii-hall.png', correctAnswer: 'Hawaii Hall' },
-  { id: 9, imageUrl: '/east-west-center.jpg', correctAnswer: 'East West Center' },
-  { id: 10, imageUrl: '/japanese-garden.jpg', correctAnswer: 'Japanese Garden' },
-
+  { id: 9, imageUrl: '/east-west-complex.png', correctAnswer: 'East West Center' },
+  { id: 10, imageUrl: '/japanese-garden.png', correctAnswer: 'Japanese Garden' },
 ];
 
 const GAME_TIME = 20;
@@ -37,11 +36,15 @@ const GamePage: React.FC = () => {
 
   const currentQuestion = questions[currentQuestionIndex];
 
-  // Handle when time expires
-  const endGame = useCallback(() => {
+  const endGame = useCallback((finalScore: number) => {
     setIsGameOver(true);
-    swal('Game Over!', `Your final score: ${score} / ${questions.length}`, 'info', { timer: 3000 });
-  }, [score]);
+    swal(
+      'Game Over!',
+      `Your final score: ${finalScore} / ${questions.length}`,
+      'info',
+      { timer: 3000 },
+    );
+  }, []);
 
   const handleTimeUp = useCallback(() => {
     if (currentQuestionIndex + 1 < questions.length) {
@@ -49,11 +52,10 @@ const GamePage: React.FC = () => {
       setUserAnswer('');
       setTimer(GAME_TIME);
     } else {
-      endGame();
+      endGame(score);
     }
-  }, [currentQuestionIndex, endGame]);
+  }, [currentQuestionIndex, score, endGame]);
 
-  // Countdown timer
   useEffect(() => {
     if (!isGameStarted || isGameOver) return undefined;
 
@@ -81,19 +83,18 @@ const GamePage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      userAnswer.trim().toLowerCase()
-      === currentQuestion.correctAnswer.toLowerCase()
-    ) {
-      setScore((prev) => prev + 1);
-    }
+    const guessCorrect = userAnswer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
+
+    const updatedScore = guessCorrect ? score + 1 : score;
+
+    if (guessCorrect) setScore(updatedScore);
 
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
       setUserAnswer('');
       setTimer(GAME_TIME);
     } else {
-      endGame();
+      endGame(updatedScore);
     }
   };
 
@@ -107,7 +108,12 @@ const GamePage: React.FC = () => {
 
               {!isGameStarted || isGameOver ? (
                 <div className="text-center">
-                  <Button variant="primary" size="lg" onClick={startGame}>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={startGame}
+                    style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}
+                  >
                     Start Game
                   </Button>
 
@@ -135,11 +141,17 @@ const GamePage: React.FC = () => {
 
                   <ProgressBar
                     now={(timer / GAME_TIME) * 100}
-                    label={`${timer}s`}
                     className="mb-3"
                     animated
                     striped
-                  />
+                    style={{ backgroundColor: '#cfe9d3' }}
+                  >
+                    <ProgressBar
+                      now={(timer / GAME_TIME) * 100}
+                      label={`${timer}s`}
+                      style={{ backgroundColor: '#7ecf8a' }}
+                    />
+                  </ProgressBar>
 
                   <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
@@ -153,7 +165,12 @@ const GamePage: React.FC = () => {
                       />
                     </Form.Group>
 
-                    <Button type="submit" variant="primary" className="w-100 mb-2">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      className="w-100 mb-2"
+                      style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}
+                    >
                       Submit
                     </Button>
 
