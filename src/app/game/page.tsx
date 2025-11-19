@@ -42,7 +42,7 @@ const GamePage: React.FC = () => {
       'Game Over!',
       `Your final score: ${finalScore} / ${questions.length}`,
       'info',
-      { timer: 3000 }
+      { timer: 3000 },
     );
   }, []);
 
@@ -57,11 +57,11 @@ const GamePage: React.FC = () => {
   }, [currentQuestionIndex, score, endGame]);
 
   useEffect(() => {
-    if (!isGameStarted || isGameOver) return;
+    if (!isGameStarted || isGameOver) return undefined;
 
     if (timer <= 0) {
       handleTimeUp();
-      return;
+      return undefined;
     }
 
     const interval = setInterval(() => {
@@ -83,8 +83,7 @@ const GamePage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const guessCorrect =
-      userAnswer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
+    const guessCorrect = userAnswer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
 
     const updatedScore = guessCorrect ? score + 1 : score;
 
