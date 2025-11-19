@@ -51,9 +51,6 @@ const NavBar: React.FC = () => {
                   >
                     Let&apos;s Play!
                   </Nav.Link>,
-                  <Nav.Link id="submission-nav" href="/submission" key="submission" active={pathName === '/submission'}>
-                    Submission
-                  </Nav.Link>,
                 ]
               : ''}
             {currentUser && role === 'ADMIN' ? (
