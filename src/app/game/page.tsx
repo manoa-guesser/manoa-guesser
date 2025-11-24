@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { Button, Card, Col, Container, Form, Row, ProgressBar } from 'react-bootstrap';
 import swal from 'sweetalert';
+import LeafletMap from '@/components/LeafletMap';
+
 
 interface GameQuestion {
   id: number;
@@ -137,6 +139,10 @@ const GamePage: React.FC = () => {
                       className="rounded"
                       style={{ objectFit: 'cover' }}
                     />
+                  </div>
+
+                  <div className="mb-3">
+                    <LeafletMap />
                   </div>
 
                   <ProgressBar
