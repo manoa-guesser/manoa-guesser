@@ -1,3 +1,10 @@
+:root {
+  --uh-green: #004d00;
+  --uh-green-light: #1e6f43;
+  --uh-green-dark: #003300;
+  --uh-gold: #f4c430;
+}
+
 html,
 body {
   --bs-dark: var(--nat-navbar-bg);
@@ -7,7 +14,7 @@ body {
   height: 100%;
   padding: 0;
   margin: 0;
-  background: fixed center url("/homepage_background.webp");
+  background: fixed center url('/homepage_background.webp');
   background-size: cover;
 }
 
@@ -30,23 +37,23 @@ body {
   color: white;
   text-shadow:
     -2px -2px 0 red,
-     2px -2px 0 red,
-    -2px  2px 0 red,
-     2px  2px 0 red;
+    2px -2px 0 red,
+    -2px 2px 0 red,
+    2px 2px 0 red;
 }
 
 .hero-subtitle {
   color: white;
   text-shadow:
     -1px -1px 0 red,
-     1px -1px 0 red,
-    -1px  1px 0 red,
-     1px  1px 0 red;
+    1px -1px 0 red,
+    -1px 1px 0 red,
+    1px 1px 0 red;
 }
 
 .custom-navbar {
-  background-color: #004d00 !important;  /* UH green */
-  border-bottom: 3px solid #ffffff;      /* Optional accent */
+  background-color: var(--uh-green) !important; /* UH green */
+  border-bottom: 3px solid #ffffff; /* Optional accent */
 }
 
 .custom-navbar .navbar-brand,
@@ -54,11 +61,19 @@ body {
 .custom-navbar .dropdown-toggle {
   color: white !important;
   font-weight: 600;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .custom-navbar .nav-link:hover,
 .custom-navbar .dropdown-item:hover {
-  color: #ff3b3b !important;  /* Yellow hover */
+  color: #ff3b3b !important; /* Yellow hover */
 }
 
+.hint-box {
+  background-color: var(--uh-green) !important;
+  border: 1px solid #d9b46a;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+}
