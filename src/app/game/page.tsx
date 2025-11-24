@@ -9,19 +9,50 @@ interface GameQuestion {
   id: number;
   imageUrl: string;
   correctAnswer: string;
+  hint: string;
 }
 
 const questions: GameQuestion[] = [
-  { id: 1, imageUrl: '/hamilton.jpg', correctAnswer: 'Hamilton Library' },
-  { id: 2, imageUrl: '/campus-center.jpg', correctAnswer: 'Campus Center' },
-  { id: 3, imageUrl: '/kuykendall.png ', correctAnswer: 'Kuykendall Hall' },
-  { id: 4, imageUrl: '/frear-hall.png', correctAnswer: 'Frear Hall' },
-  { id: 5, imageUrl: '/sakamaki-hall.png', correctAnswer: 'Sakamaki Hall' },
-  { id: 6, imageUrl: '/life-sciences-building.png', correctAnswer: 'Life Sciences Building' },
-  { id: 7, imageUrl: '/holmes-hall.png', correctAnswer: 'Holmes Hall' },
-  { id: 8, imageUrl: '/hawaii-hall.png', correctAnswer: 'Hawaii Hall' },
-  { id: 9, imageUrl: '/east-west-complex.png', correctAnswer: 'East West Center' },
-  { id: 10, imageUrl: '/japanese-garden.png', correctAnswer: 'Japanese Garden' },
+  { id: 1, imageUrl: '/hamilton.jpg', correctAnswer: 'Hamilton Library', hint: 'The main library at UH Mānoa' },
+  {
+    id: 2,
+    imageUrl: '/campus-center.jpg',
+    correctAnswer: 'Campus Center',
+    hint: 'A hub for food, events, and student activities',
+  },
+  { id: 3, imageUrl: '/kuykendall.png', correctAnswer: 'Kuykendall Hall', hint: 'Named after a former UH president' },
+  {
+    id: 4,
+    imageUrl: '/frear-hall.png',
+    correctAnswer: 'Frear Hall',
+    hint: 'One of the main student housing buildings',
+  },
+  { id: 5, imageUrl: '/sakamaki-hall.png', correctAnswer: 'Sakamaki Hall', hint: 'Connected to Moore Hall' },
+  {
+    id: 6,
+    imageUrl: '/life-sciences-building.png',
+    correctAnswer: 'Life Sciences Building',
+    hint: 'New STEM facility opened in 2020',
+  },
+  {
+    id: 7,
+    imageUrl: '/holmes-hall.png',
+    correctAnswer: 'Holmes Hall',
+    hint: 'Where the College of Engineering is located',
+  },
+  { id: 8, imageUrl: '/hawaii-hall.png', correctAnswer: 'Hawaii Hall', hint: 'One of the oldest buildings on campus' },
+  {
+    id: 9,
+    imageUrl: '/east-west-complex.png',
+    correctAnswer: 'East West Center',
+    hint: 'International research organization',
+  },
+  {
+    id: 10,
+    imageUrl: '/japanese-garden.png',
+    correctAnswer: 'Japanese Garden',
+    hint: 'A peaceful hidden spot between buildings',
+  },
 ];
 
 const GAME_TIME = 20;
@@ -33,17 +64,13 @@ const GamePage: React.FC = () => {
   const [timer, setTimer] = useState(GAME_TIME);
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   const currentQuestion = questions[currentQuestionIndex];
 
   const endGame = useCallback((finalScore: number) => {
     setIsGameOver(true);
-    swal(
-      'Game Over!',
-      `Your final score: ${finalScore} / ${questions.length}`,
-      'info',
-      { timer: 3000 },
-    );
+    swal('Game Over!', `Your final score: ${finalScore} / ${questions.length}`, 'info', { timer: 3000 });
   }, []);
 
   const handleTimeUp = useCallback(() => {
@@ -51,6 +78,7 @@ const GamePage: React.FC = () => {
       setCurrentQuestionIndex((prev) => prev + 1);
       setUserAnswer('');
       setTimer(GAME_TIME);
+      setShowHint(false);
     } else {
       endGame(score);
     }
@@ -93,6 +121,7 @@ const GamePage: React.FC = () => {
       setCurrentQuestionIndex((prev) => prev + 1);
       setUserAnswer('');
       setTimer(GAME_TIME);
+      setShowHint(false);
     } else {
       endGame(updatedScore);
     }
@@ -128,6 +157,32 @@ const GamePage: React.FC = () => {
                 </div>
               ) : (
                 <>
+                  {/* Hint button */}
+                  <div className="d-flex justify-content-end mb-2">
+                    <Button
+                      variant="light"
+                      style={{
+                        borderRadius: '50%',
+                        width: '36px',
+                        height: '36px',
+                        fontWeight: 'bold',
+                        padding: 0,
+                        border: '1px solid #ccc',
+                      }}
+                      onClick={() => setShowHint((prev) => !prev)}
+                    >
+                      ?
+                    </Button>
+                  </div>
+
+                  {/* Hint display */}
+                  {showHint && (
+                    <div className="hint-box mb-3">
+                      <strong>Hint: </strong>
+                      {currentQuestion.hint}
+                    </div>
+                  )}
+
                   <div className="text-center mb-3">
                     <Image
                       src={currentQuestion.imageUrl}

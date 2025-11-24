@@ -61,7 +61,7 @@ const SubmissionForm: React.FC = () => {
         <Col xs={6}>
           <Card>
             <Card.Body>
-              <h2 className="text-center mb-3">Submit a Manoa Location</h2>
+              <h2 className="text-center mb-3 hero-title">Submit a Manoa Location</h2>
               <Form onSubmit={handleSubmit(onSubmit)}>
                 {/* Image Upload */}
                 <Form.Group className="mb-3">
