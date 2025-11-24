@@ -14,7 +14,7 @@ const SignIn = () => {
     const email = target.email.value;
     const password = target.password.value;
     const result = await signIn('credentials', {
-      callbackUrl: '/list',
+      callbackUrl: '/game',
       email,
       password,
     });
@@ -30,9 +30,7 @@ const SignIn = () => {
         <Row className="justify-content-center">
           <Col xs={5}>
             <h1 className="text-center fw-bold mb-3 hero-title display-3">Welcome back!</h1>
-            <p className="text-center mb-4 hero-subtitle fs-4">
-              Sign in to continue to Manoa Guesser
-            </p>
+            <p className="text-center mb-4 hero-subtitle fs-4">Sign in to continue to Manoa Guesser</p>
             <Card className="p-4 rounded-4 home-card">
               <Card.Body>
                 <Form method="post" onSubmit={handleSubmit}>
