@@ -14,7 +14,13 @@ body {
   height: 100%;
   padding: 0;
   margin: 0;
-  background: fixed center url('/homepage_background.webp');
+  background: #ffffff;
+}
+
+/* Home page background */
+.bg-home {
+  min-height: 100vh;
+  background: fixed center url("/homepage_background.webp");
   background-size: cover;
 }
 
