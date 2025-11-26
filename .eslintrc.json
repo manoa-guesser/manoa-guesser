@@ -1,5 +1,5 @@
 {
-  "extends": ["next/core-web-vitals", "airbnb", "airbnb-typescript"],
+  "extends": ["next/core-web-vitals", "airbnb"],
   "parserOptions": {
     "ecmaVersion": "latest",
     "sourceType": "module",
