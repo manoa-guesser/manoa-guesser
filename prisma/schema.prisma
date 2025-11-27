@@ -40,7 +40,7 @@ enum Condition {
 model Submission {
   id           Int      @id @default(autoincrement())
   imageUrl     String
-  caption      String?
+  caption      String
   location     String
   submittedBy  String
   createdAt    DateTime @default(now())
