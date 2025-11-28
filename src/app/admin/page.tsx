@@ -1,9 +1,9 @@
 import { getServerSession } from 'next-auth';
 import { Col, Container, Row, Table, Badge, Button, Card } from 'react-bootstrap';
-import StuffItemAdmin from '@/components/StuffItemAdmin';
 import prisma from '@/lib/prisma';
 import { adminProtectedPage } from '@/lib/page-protection';
 import authOptions from '@/lib/authOptions';
+import Link from 'next/link';
 
 const AdminPage = async () => {
   const session = await getServerSession(authOptions);
@@ -50,90 +50,46 @@ const AdminPage = async () => {
           </Col>
         </Row>
 
-        {/* SECTION 1: Stuff / Game Items */}
+        {/* SECTION 1: Users – Players & Scores (replaces Stuff section) */}
         <Row className="mb-5">
           <Col>
             <Card className="shadow-sm rounded-4 admin-card p-4">
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <div>
-                  <h2 className="fw-bold mb-1 hero-subtitle">Game Items (Stuff)</h2>
+                  <h2 className="fw-bold mb-1 hero-subtitle">Players Information</h2>
                   <p className="text-muted mb-0">
-                    View and manage all items currently stored in the system.
+                    View all users along with their usernames, roles, and current scores.
                   </p>
                 </div>
                 <Badge bg="success" pill>
-                  {stuff.length}
-                  &nbsp;
-                  items
-                </Badge>
-              </div>
-              <Table striped bordered hover responsive className="mb-0">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Quantity</th>
-                    <th>Condition</th>
-                    <th>Owner</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stuff.map((item) => (
-                    <StuffItemAdmin key={item.id} {...item} />
-                  ))}
-                </tbody>
-              </Table>
-            </Card>
-          </Col>
-        </Row>
-
-        {/* SECTION 2: Users & Roles */}
-        <Row className="mb-5">
-          <Col>
-            <Card className="shadow-sm rounded-4 admin-card p-4">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                  <h2 className="fw-bold mb-1 hero-subtitle">User Management</h2>
-                  <p className="text-muted mb-0">
-                    View all registered users and their roles. Role editing controls
-                    can be wired up here later.
-                  </p>
-                </div>
-                <Badge bg="info" pill>
                   {users.length}
-                  &nbsp;
-                  users
+                  &nbsp;players
                 </Badge>
               </div>
               <Table striped bordered hover responsive className="mb-0">
                 <thead>
                   <tr>
                     <th>Email</th>
+                    <th>Username</th>
                     <th>Role</th>
-                    <th>Status</th>
-                    <th>Actions (Coming Soon)</th>
+                    <th>Score</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((user) => (
                     <tr key={user.id}>
                       <td>{user.email}</td>
+                      <td>{user.username ?? '-'}</td>
                       <td>{user.role}</td>
+                      <td>{user.score}</td>
                       <td>
-                        {user.role === 'ADMIN' ? (
-                          <Badge bg="primary">Admin</Badge>
-                        ) : (
-                          <Badge bg="secondary">User</Badge>
-                        )}
-                      </td>
-                      <td>
-                        <Button variant="outline-primary" size="sm" disabled>
-                          Edit Role
-                        </Button>
-                        {' '}
-                        <Button variant="outline-danger" size="sm" disabled>
-                          Disable User
-                        </Button>
+                        {/* Wire this route up to your EditUserPage path */}
+                        <Link href={`/edit/${user.id}`}>
+                          <Button variant="outline-primary" size="sm">
+                            Edit User
+                          </Button>
+                        </Link>
                       </td>
                     </tr>
                   ))}

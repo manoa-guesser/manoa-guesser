@@ -1,6 +1,6 @@
 'use server';
 
-import { Stuff, Condition } from '@prisma/client';
+import { Stuff, Condition, User } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
@@ -9,16 +9,25 @@ import prisma from '@/lib/prisma';
  * Adds a new stuff to the database.
  * @param stuff, an object with the following properties: name, quantity, owner, condition.
  */
-export async function addStuff(stuff: { name: string; quantity: number; owner: string; condition: string }) {
+export async function addStuff(stuff: {
+  name: string;
+  quantity: number;
+  owner: string;
+  condition: string;
+}) {
   // console.log(`addStuff data: ${JSON.stringify(stuff, null, 2)}`);
   let condition: Condition = 'good';
+
   if (stuff.condition === 'poor') {
     condition = 'poor';
   } else if (stuff.condition === 'excellent') {
     condition = 'excellent';
+  } else if (stuff.condition === 'good') {
+    condition = 'good';
   } else {
     condition = 'fair';
   }
+
   await prisma.stuff.create({
     data: {
       name: stuff.name,
@@ -74,6 +83,7 @@ export async function createUser(credentials: { email: string; password: string 
     data: {
       email: credentials.email,
       password,
+      // role and score use defaults from the Prisma schema
     },
   });
 }
@@ -91,4 +101,38 @@ export async function changePassword(credentials: { email: string; password: str
       password,
     },
   });
+}
+
+/**
+ * Edits an existing user (for admin edit page).
+ * @param user, a User object (we’ll mainly use id, email, username, role, score).
+ */
+export async function editUser(user: User) {
+  // console.log(`editUser data: ${JSON.stringify(user, null, 2)}`);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      score: user.score,
+      // password is NOT changed here
+    },
+  });
+
+  // Change this path to whatever your admin/user list route is
+  redirect('/admin'); // or '/admin/users' or similar
+}
+
+/**
+ * (Optional) Deletes an existing user from the database.
+ * Be careful with this in production.
+ */
+export async function deleteUser(id: number) {
+  await prisma.user.delete({
+    where: { id },
+  });
+
+  // Adjust redirect as needed
+  redirect('/admin');
 }
