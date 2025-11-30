@@ -6,13 +6,10 @@ import { Button, Card, Col, Container, Form, Row, Image } from 'react-bootstrap'
 import swal from 'sweetalert';
 import { redirect } from 'next/navigation';
 import { useState } from 'react';
-
-interface SubmissionData {
-  image: FileList;
-  caption: string;
-  location: string; // GPS coordinate string
-  submittedBy: string;
-}
+import { yupResolver } from '@hookform/resolvers/yup';
+import { AddSubmissionSchema } from '@/lib/validationSchemas';
+import { addSubmission, SubmissionFormData } from '@/lib/dbActions';
+import supabase from '@/lib/supabaseClient';
 
 const SubmissionForm: React.FC = () => {
   const { data: session, status } = useSession();
@@ -22,8 +19,11 @@ const SubmissionForm: React.FC = () => {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
-  } = useForm<SubmissionData>();
+  } = useForm<SubmissionFormData>({
+    resolver: yupResolver(AddSubmissionSchema),
+  });
 
   if (status === 'loading') return <p>Loading...</p>;
   if (status === 'unauthenticated') redirect('/auth/signin');
@@ -33,26 +33,79 @@ const SubmissionForm: React.FC = () => {
     if (file) {
       const imageURL = URL.createObjectURL(file);
       setPreview(imageURL);
+
+      // IMPORTANT: Set imageUrl for Yup + dbActions
+      setValue('imageUrl', imageURL);
     } else {
       setPreview(null);
+      setValue('imageUrl', '');
     }
   };
 
-  const onSubmit = async (data: SubmissionData) => {
-    const formData = new FormData();
-    formData.append('image', data.image[0]);
-    formData.append('caption', data.caption);
-    formData.append('location', data.location);
-    formData.append('submittedBy', session?.user?.email || '');
+  const onSubmit = async (data: SubmissionFormData) => {
+    const file = data.image?.[0];
+    if (!file) {
+      swal('Error', 'Please upload an image', 'error');
+      return;
+    }
 
-    await fetch('/api/submissions', {
-      method: 'POST',
-      body: formData,
+    // Create a unique filename
+    const fileName = `${Date.now()}-${file.name}`;
+
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('submissions') // <-- bucket name
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+    supabase.auth.getUser().then(console.log);
+    console.log('UPLOAD RESULT:', uploadData);
+    console.log('UPLOAD ERROR:', uploadError);
+
+    if (uploadError) {
+      console.error(uploadError);
+      swal('Error', 'Image upload failed', 'error');
+      return;
+    }
+
+    // Get public URL
+    const { data: publicURLData } = supabase.storage.from('submissions').getPublicUrl(fileName);
+
+    const { publicUrl } = publicURLData;
+
+    // Save submission to DB
+    await addSubmission({
+      imageUrl: publicUrl,
+      caption: data.caption,
+      location: data.location,
+      submittedBy: session?.user?.email || '',
     });
 
-    swal('Success', 'Your image has been submitted!', 'success', { timer: 2000 });
-    reset();
-    setPreview(null);
+    swal({
+      title: 'Success!',
+      text: 'Your image has been submitted.',
+      icon: 'success',
+      buttons: {
+        submitAgain: {
+          text: 'Submit Another',
+          value: 'submitAgain',
+          className: 'btn btn-success',
+        },
+        playGame: {
+          text: 'Play Game',
+          value: 'playGame',
+          className: 'btn btn-primary',
+        },
+      },
+    }).then((value) => {
+      if (value === 'submitAgain') {
+        reset();
+        setPreview(null);
+      } else if (value === 'playGame') {
+        window.location.href = '/game';
+      }
+    });
   };
 
   return (
@@ -62,17 +115,13 @@ const SubmissionForm: React.FC = () => {
           <Card>
             <Card.Body>
               <h2 className="text-center mb-3 hero-title">Submit a Manoa Location</h2>
+
               <Form onSubmit={handleSubmit(onSubmit)}>
                 {/* Image Upload */}
                 <Form.Group className="mb-3">
                   <Form.Label>Upload Image</Form.Label>
-                  <Form.Control
-                    type="file"
-                    accept="image/*"
-                    {...register('image', { required: 'Image is required' })}
-                    onChange={handleImageChange}
-                  />
-                  {errors.image && <div className="text-danger small">{errors.image.message}</div>}
+                  <Form.Control type="file" accept="image/*" {...register('image')} onChange={handleImageChange} />
+                  {errors.imageUrl && <div className="text-danger small">{errors.imageUrl.message}</div>}
                 </Form.Group>
 
                 {/* Preview */}
@@ -91,29 +140,23 @@ const SubmissionForm: React.FC = () => {
                 {/* Caption */}
                 <Form.Group className="mb-3">
                   <Form.Label>Caption / Description</Form.Label>
-                  <Form.Control type="text" placeholder="Optional hint..." {...register('caption')} />
+                  <Form.Control type="text" placeholder="Hint..." {...register('caption')} />
                 </Form.Group>
 
                 {/* GPS Coordinates */}
                 <Form.Group className="mb-3">
                   <Form.Label>Location (GPS Coordinates)</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="e.g. 21.3008, -157.8175"
-                    {...register('location', {
-                      required: 'Location is required',
-                      pattern: {
-                        value: /^-?\d{1,2}\.\d+,\s*-?\d{1,3}\.\d+$/,
-                        message: 'Enter valid GPS coordinates (lat, lon)',
-                      },
-                    })}
-                  />
+                  <Form.Control type="text" placeholder="e.g. 21.3008, -157.8175" {...register('location')} />
                   {errors.location && <div className="text-danger small">{errors.location.message}</div>}
                 </Form.Group>
+
+                <input type="hidden" {...register('submittedBy')} value={session?.user?.email || ''} />
+                <input type="hidden" {...register('imageUrl')} />
 
                 <Button type="submit" variant="primary" className="me-2">
                   Submit
                 </Button>
+
                 <Button
                   type="button"
                   variant="secondary"
