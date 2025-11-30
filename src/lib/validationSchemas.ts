@@ -14,3 +14,10 @@ export const EditStuffSchema = Yup.object({
   condition: Yup.string().oneOf(['excellent', 'good', 'fair', 'poor']).required(),
   owner: Yup.string().required(),
 });
+
+export const AddSubmissionSchema = Yup.object({
+  imageUrl: Yup.string().required('Image URL is required'),
+  caption: Yup.string().required(),
+  location: Yup.string().required('Location is required'),
+  submittedBy: Yup.string().required(),
+});

@@ -5,6 +5,14 @@ import { hash } from 'bcrypt';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 
+export type SubmissionFormData = {
+  image?: FileList;
+  imageUrl: string;
+  caption: string;
+  location: string;
+  submittedBy: string;
+};
+
 /**
  * Adds a new stuff to the database.
  * @param stuff, an object with the following properties: name, quantity, owner, condition.
@@ -29,6 +37,19 @@ export async function addStuff(stuff: { name: string; quantity: number; owner: s
   });
   // After adding, redirect to the list page
   redirect('/list');
+}
+
+export async function addSubmission(submission: SubmissionFormData) {
+  await prisma.submission.create({
+    data: {
+      imageUrl: submission.imageUrl,
+      caption: submission.caption,
+      location: submission.location,
+      submittedBy: submission.submittedBy,
+    },
+  });
+
+  redirect('/submission');
 }
 
 /**
