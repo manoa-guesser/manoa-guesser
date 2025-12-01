@@ -1,34 +1,43 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Table, Button } from 'react-bootstrap';
+import { Table, Dropdown, DropdownButton } from 'react-bootstrap';
+import '../globals.css';
 
 interface Player {
   id: number;
   name: string;
   score: number;
+  accuracy?: number;
+  average?: number;
+  createdAt?: string; // for time filtering later
 }
 
 export default function LeaderboardPage() {
-  // Mock leaderboard data
-  const [players, setPlayers] = useState<Player[]>([
-    { id: 1, name: 'Lawrence', score: 980 },
-    { id: 2, name: 'Ava', score: 870 },
-    { id: 3, name: 'Noah', score: 940 },
-    { id: 4, name: 'Mia', score: 760 },
-  ]);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [sortLabel, setSortLabel] = useState("Best Score");
+  const [sortType, setSortType] = useState<"score" | "accuracy" | "average">("score");
 
-  // Fetch real leaderboard data
+  // NEW
+  const [timeLabel, setTimeLabel] = useState("All Time");
+  const [timeFilter, setTimeFilter] = useState<"all" | "week" | "month">("all");
+
   useEffect(() => {
     const loadLeaderboard = async () => {
       const res = await fetch('/api/leaderboard');
       const data = await res.json();
 
-      // Convert API fields to your interface format
+      if (!Array.isArray(data)) return;
+
       const formatted = data.map((player: any) => ({
         id: player.id,
-        name: player.username, // maps username → name
+        name: player.username,
         score: player.score,
+
+        accuracy: player.accuracy ?? null,
+        average: player.average ?? null,
+
+        createdAt: player.createdAt ?? new Date().toISOString() // TEMP
       }));
 
       setPlayers(formatted);
@@ -37,50 +46,150 @@ export default function LeaderboardPage() {
     loadLeaderboard();
   }, []);
 
-  // Track sort direction
-  const [sortAsc, setSortAsc] = useState(true);
+  // SORTING
+  const applySort = (type: "score" | "accuracy" | "average", label: string) => {
+    setSortType(type);
+    setSortLabel(label);
 
-  const sortByScore = () => {
-    const sorted = [...players].sort((a, b) => {
-      if (sortAsc) {
-        return a.score - b.score;
-      }
-      return b.score - a.score;
-    });
-
-    setPlayers(sorted);
-    setSortAsc((prev) => !prev);
+    setPlayers((p) =>
+      [...p].sort((a, b) => {
+        const A = (a as any)[type] ?? 0;
+        const B = (b as any)[type] ?? 0;
+        return B - A;
+      })
+    );
   };
 
-  return (
-    <main className="p-5">
-      <h1 className="text-3xl font-bold mb-4 text-center">Leaderboard</h1>
+  // TIME FILTERING (dummy logic for now)
+  const filterByTime = (list: Player[]) => {
+    if (timeFilter === "all") return list;
 
-      <div className="d-flex justify-content-center mb-3">
-        <Button onClick={sortByScore} variant="primary">
-          Sort by Score
-          {sortAsc ? '▲' : '▼'}
-        </Button>
+    const now = new Date().getTime();
+
+    return list.filter((p) => {
+      const created = new Date(p.createdAt!).getTime();
+      const diff = now - created;
+
+      if (timeFilter === "week") return diff <= 7 * 24 * 60 * 60 * 1000;
+      if (timeFilter === "month") return diff <= 30 * 24 * 60 * 60 * 1000;
+      return true;
+    });
+  };
+
+  // APPLY TIME FILTER BEFORE TOP 3 + TABLE
+  const filtered = filterByTime(players);
+
+  const sorted = [...filtered].sort((a, b) => b.score - a.score);
+  const topThree = sorted.slice(0, 3);
+  const rest = sorted.slice(3);
+
+  return (
+    <main className="leaderboard-bg">
+      <h1 className="leaderboard-title">LEADERBOARD</h1>
+
+      {/* TOP THREE */}
+      <div className="top-three-container">
+        {topThree[1] && (
+          <div className="top-card top-second">
+            <div className="medal">🥈</div>
+            <h3>{topThree[1].name}</h3>
+            <p>Score: {topThree[1].score}</p>
+          </div>
+        )}
+
+        {topThree[0] && (
+          <div className="top-card top-first">
+            <div className="medal">🥇</div>
+            <h3>{topThree[0].name}</h3>
+            <p>Score: {topThree[0].score}</p>
+          </div>
+        )}
+
+        {topThree[2] && (
+          <div className="top-card top-third">
+            <div className="medal">🥉</div>
+            <h3>{topThree[2].name}</h3>
+            <p>Score: {topThree[2].score}</p>
+          </div>
+        )}
       </div>
 
-      <Table striped bordered hover responsive="md" className="shadow-sm">
-        <thead className="table-light">
-          <tr>
-            <th>#</th>
-            <th>Player</th>
-            <th>Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          {players.map((player, index) => (
-            <tr key={player.id}>
-              <td>{index + 1}</td>
-              <td>{player.name}</td>
-              <td>{player.score}</td>
+      {/* LEADERBOARD CARD */}
+      <div className="leaderboard-card">
+
+        {/* FILTER BAR WITH TWO DROPDOWNS */}
+        <div className="filter-bar">
+
+          {/* SORT */}
+          <DropdownButton
+            id="sort-dropdown"
+            title={sortLabel}
+            variant="success"
+            className="leaderboard-dropdown px-3"
+          >
+            <Dropdown.Item onClick={() => applySort("score", "Best Score")}>
+              Best Score
+            </Dropdown.Item>
+
+            <Dropdown.Item onClick={() => applySort("average", "Average Performance")}>
+              Average Performance
+            </Dropdown.Item>
+
+            <Dropdown.Item onClick={() => applySort("accuracy", "Accuracy")}>
+              Accuracy
+            </Dropdown.Item>
+          </DropdownButton>
+
+          {/* TIME FILTER */}
+          <DropdownButton
+            id="time-dropdown"
+            title={timeLabel}
+            variant="secondary"
+            className="leaderboard-dropdown px-3 ms-3"
+          >
+            <Dropdown.Item onClick={() => { setTimeFilter("all"); setTimeLabel("All Time"); }}>
+              All Time
+            </Dropdown.Item>
+
+            <Dropdown.Item onClick={() => { setTimeFilter("week"); setTimeLabel("Past Week"); }}>
+              Past Week
+            </Dropdown.Item>
+
+            <Dropdown.Item onClick={() => { setTimeFilter("month"); setTimeLabel("Past Month"); }}>
+              Past Month
+            </Dropdown.Item>
+          </DropdownButton>
+
+        </div>
+
+        {/* TABLE */}
+        <Table striped bordered hover responsive="md" className="shadow-sm">
+          <thead className="leaderboard-table-head">
+            <tr>
+              <th>#</th>
+              <th>Player</th>
+
+              {sortType === "score" && <th>Best Score</th>}
+              {sortType === "accuracy" && <th>Accuracy</th>}
+              {sortType === "average" && <th>Average</th>}
             </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+
+          <tbody>
+            {rest.map((player, index) => (
+              <tr key={player.id}>
+                <td>{index + 4}</td>
+                <td>{player.name}</td>
+
+                {sortType === "score" && <td>{player.score}</td>}
+                {sortType === "accuracy" && <td>{player.accuracy ?? '—'}</td>}
+                {sortType === "average" && <td>{player.average ?? '—'}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+
+      </div>
     </main>
   );
 }

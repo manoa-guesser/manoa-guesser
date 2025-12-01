@@ -5,6 +5,9 @@
   --uh-gold: #f4c430;
 }
 
+/* -------------------------------- */
+/* GLOBAL BASE */
+/* -------------------------------- */
 html,
 body {
   --bs-dark: var(--nat-navbar-bg);
@@ -17,7 +20,10 @@ body {
   background: #ffffff;
 }
 
-/* Home page background */
+/* -------------------------------- */
+/* HOME PAGE */
+/* -------------------------------- */
+
 .bg-home {
   min-height: 100vh;
   background: fixed center url("/homepage_background.webp");
@@ -57,9 +63,13 @@ body {
     1px 1px 0 red;
 }
 
+/* -------------------------------- */
+/* NAVBAR */
+/* -------------------------------- */
+
 .custom-navbar {
-  background-color: var(--uh-green) !important; /* UH green */
-  border-bottom: 3px solid #ffffff; /* Optional accent */
+  background-color: var(--uh-green) !important;
+  border-bottom: 3px solid #ffffff;
 }
 
 .custom-navbar .navbar-brand,
@@ -72,8 +82,12 @@ body {
 
 .custom-navbar .nav-link:hover,
 .custom-navbar .dropdown-item:hover {
-  color: #ff3b3b !important; /* Yellow hover */
+  color: #ff3b3b !important;
 }
+
+/* -------------------------------- */
+/* HINT BOX */
+/* -------------------------------- */
 
 .hint-box {
   background-color: var(--uh-green) !important;
@@ -82,4 +96,162 @@ body {
   padding: 12px;
   border-radius: 8px;
   text-align: center;
+}
+
+/* -------------------------------- */
+/* LEADERBOARD BACKGROUND */
+/* -------------------------------- */
+
+.leaderboard-bg {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #d5e1e8, #f3f6f7);
+  background-attachment: fixed;
+  padding: 3rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* -------------------------------- */
+/* LEADERBOARD TITLE */
+/* -------------------------------- */
+
+.leaderboard-title {
+  font-size: 3.5rem;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  margin-bottom: 2.5rem;
+
+  text-shadow:
+    -2px -2px 0 red,
+     2px -2px 0 red,
+    -2px  2px 0 red,
+     2px  2px 0 red;
+}
+
+/* -------------------------------- */
+/* TOP 3 PLAYER CARDS */
+/* -------------------------------- */
+
+.top-card {
+  width: 260px;
+  padding: 1.2rem;
+  border-radius: 15px;
+  text-align: center;
+  border: 3px solid var(--uh-gold);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  color: #333;
+}
+
+.top-card h3 {
+  margin: 0;
+  font-weight: bold;
+}
+
+.medal {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.top-three-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+/* 🥇 FIRST (LEFT) */
+.top-first {
+  background: linear-gradient(145deg, #fff6d2, #ffe9a8);
+  transform: scale(1.08);
+  order: 1;
+}
+
+/* 🥈 SECOND (RIGHT) */
+.top-second {
+  background: linear-gradient(145deg, #f3f3f3, #e2e2e2);
+  order: 2;
+}
+
+/* 🥉 THIRD (BOTTOM) */
+.top-third {
+  background: linear-gradient(145deg, #fbe4d1, #f4c9a9);
+  margin-top: 1rem;
+  order: 3;
+}
+
+/* -------------------------------- */
+/* LEADERBOARD TABLE CARD */
+/* -------------------------------- */
+
+.leaderboard-card {
+  width: 80%;
+  max-width: 900px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2rem;
+  border-radius: 15px;
+  border: 3px solid var(--uh-gold);
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
+}
+
+/* -------------------------------- */
+/* FIX BUTTON COLORS (PRIMARY + SECONDARY) */
+/* -------------------------------- */
+
+/* Remove Bootstrap two-tone gradient */
+.leaderboard-dropdown .btn,
+.leaderboard-dropdown .dropdown-toggle {
+  background-color: var(--uh-green) !important;
+  background-image: none !important;
+  border: 2px solid var(--uh-green-dark) !important;
+  color: white !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+/* Hover & focus */
+.leaderboard-dropdown .btn:hover,
+.leaderboard-dropdown .dropdown-toggle:hover,
+.leaderboard-dropdown .btn:focus,
+.leaderboard-dropdown .dropdown-toggle:focus {
+  background-color: var(--uh-green-light) !important;
+  box-shadow: none !important;
+}
+
+/* SECONDARY GRAY STYLE (Time filter) */
+.leaderboard-dropdown.secondary .btn,
+.leaderboard-dropdown.secondary .dropdown-toggle {
+  background-color: #555 !important;
+  border: 2px solid #333 !important;
+  color: white !important;
+  background-image: none !important;
+}
+
+.leaderboard-dropdown.secondary .btn:hover,
+.leaderboard-dropdown.secondary .dropdown-toggle:hover {
+  background-color: #666 !important;
+}
+
+/* -------------------------------- */
+/* TABLE HEADER */
+/* -------------------------------- */
+
+.leaderboard-table-head {
+  background-color: var(--uh-green-light) !important;
+  color: white !important;
+}
+
+/* -------------------------------- */
+/* FILTER BAR */
+/* -------------------------------- */
+
+.filter-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  justify-content: flex-start;
 }
