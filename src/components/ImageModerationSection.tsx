@@ -66,7 +66,8 @@ export default function ImageModerationSection({
               </p>
             </div>
             <Badge bg={pendingCount > 0 ? 'warning' : 'success'} pill>
-              {pendingCount}&nbsp;pending
+              {pendingCount}\
+              &nbsp;pending
             </Badge>
           </div>
 
@@ -106,7 +107,10 @@ export default function ImageModerationSection({
                       <div className="fw-semibold">
                         {s.caption || `Submission #${s.id}`}
                       </div>
-                      <div className="text-muted small">ID: {s.id}</div>
+                      <div className="text-muted small">
+                        ID:
+                        {s.id}
+                      </div>
                     </td>
                     <td>{s.submittedBy || 'Unknown'}</td>
                     <td>

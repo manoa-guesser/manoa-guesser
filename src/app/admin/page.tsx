@@ -143,7 +143,8 @@ const AdminPage = async () => {
                   </p>
                 </div>
                 <Badge bg={reportedSubmissions.length > 0 ? 'danger' : 'secondary'} pill>
-                  {reportedSubmissions.length}&nbsp;reported
+                  {reportedSubmissions.length}
+                  &nbsp;reported
                 </Badge>
               </div>
 
@@ -183,7 +184,10 @@ const AdminPage = async () => {
                           <div className="fw-semibold">
                             {s.caption || `Submission #${s.id}`}
                           </div>
-                          <div className="text-muted small">ID: {s.id}</div>
+                          <div className="text-muted small">
+                            ID: 
+                            {s.id}
+                          </div>
                         </td>
                         <td>{s.submittedBy || 'Unknown'}</td>
                         <td>{s.status}</td>
