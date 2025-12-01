@@ -1,0 +1,45 @@
+{
+  "cookies": [
+    {
+      "name": "next-auth.csrf-token",
+      "value": "bf00e28ed1719727f54983ff8d87ba388c3041c092ceb01ee8b29260ff47ac79%7C11194be83bfb7566ad6b84f93aa6e7799430fe3e1a3b8d2c86f7417e4d1a9110",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "next-auth.callback-url",
+      "value": "http%3A%2F%2Flocalhost%3A3000%2Fgame",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "next-auth.session-token",
+      "value": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..UmgOHf29ErQozPvn.nHx8QmY0BbEFhiIDNUwE8-OhriT2YcB5e8VWLZqMLRT0dItKpazHFhq-8YpocDdcY2h5wdVUqRGvi5EhrsDWYKayAuxZEM5_I5Wjg9sQd5cZzkjmz6yoRodT25PYn3ZJIgCe7kZ6xSonQfXNPftVpMS--jbQWuYXz8_RkEd0pZmguHK8mMasUIOZREXdqZo.yqsJSNuAuO0jvEl-tuhqjQ",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1767207924.737642,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "nextauth.message",
+          "value": "{\"event\":\"session\",\"data\":{\"trigger\":\"getSession\"},\"timestamp\":1764615924}"
+        }
+      ]
+    }
+  ]
+}
