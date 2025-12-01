@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './globals.css';
+import 'leaflet/dist/leaflet.css';
 // import Footer from '@/components/Footer';
 import NavBar from '@/components/Navbar';
 import Providers from './providers';

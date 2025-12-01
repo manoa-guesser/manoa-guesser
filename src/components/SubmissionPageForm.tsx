@@ -2,7 +2,16 @@
 
 import { useSession } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
-import { Button, Card, Col, Container, Form, Row, Image } from 'react-bootstrap';
+import {
+  Button,
+  Card,
+  Col,
+  Container,
+  Form,
+  Row,
+  Image,
+} from 'react-bootstrap';
+import dynamic from 'next/dynamic';
 import swal from 'sweetalert';
 import { redirect } from 'next/navigation';
 import { useState } from 'react';
@@ -10,6 +19,8 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { AddSubmissionSchema } from '@/lib/validationSchemas';
 import { addSubmission, SubmissionFormData } from '@/lib/dbActions';
 import supabase from '@/lib/supabaseClient';
+
+const SubmissionMap = dynamic(() => import('./SubmissionMap'), { ssr: false });
 
 const SubmissionForm: React.FC = () => {
   const { data: session, status } = useSession();
@@ -70,7 +81,9 @@ const SubmissionForm: React.FC = () => {
     }
 
     // Get public URL
-    const { data: publicURLData } = supabase.storage.from('submissions').getPublicUrl(fileName);
+    const { data: publicURLData } = supabase.storage
+      .from('submissions')
+      .getPublicUrl(fileName);
 
     const { publicUrl } = publicURLData;
 
@@ -90,12 +103,12 @@ const SubmissionForm: React.FC = () => {
         submitAgain: {
           text: 'Submit Another',
           value: 'submitAgain',
-          className: 'btn btn-success',
+          className: 'swal-btn swal-btn-submit',
         },
         playGame: {
           text: 'Play Game',
           value: 'playGame',
-          className: 'btn btn-primary',
+          className: 'swal-btn swal-btn-play',
         },
       },
     }).then((value) => {
@@ -114,14 +127,25 @@ const SubmissionForm: React.FC = () => {
         <Col xs={6}>
           <Card>
             <Card.Body>
-              <h2 className="text-center mb-3 hero-title">Submit a Manoa Location</h2>
+              <h2 className="text-center mb-3 hero-title">
+                Submit a Manoa Location
+              </h2>
 
               <Form onSubmit={handleSubmit(onSubmit)}>
                 {/* Image Upload */}
                 <Form.Group className="mb-3">
                   <Form.Label>Upload Image</Form.Label>
-                  <Form.Control type="file" accept="image/*" {...register('image')} onChange={handleImageChange} />
-                  {errors.imageUrl && <div className="text-danger small">{errors.imageUrl.message}</div>}
+                  <Form.Control
+                    type="file"
+                    accept="image/*"
+                    {...register('image')}
+                    onChange={handleImageChange}
+                  />
+                  {errors.imageUrl && (
+                    <div className="text-danger small">
+                      {errors.imageUrl.message}
+                    </div>
+                  )}
                 </Form.Group>
 
                 {/* Preview */}
@@ -139,18 +163,24 @@ const SubmissionForm: React.FC = () => {
 
                 {/* Caption */}
                 <Form.Group className="mb-3">
-                  <Form.Label>Caption / Description</Form.Label>
-                  <Form.Control type="text" placeholder="Hint..." {...register('caption')} />
+                  <Form.Label>Hint</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Hint..."
+                    {...register('caption')}
+                  />
                 </Form.Group>
 
                 {/* GPS Coordinates */}
                 <Form.Group className="mb-3">
-                  <Form.Label>Location (GPS Coordinates)</Form.Label>
-                  <Form.Control type="text" placeholder="e.g. 21.3008, -157.8175" {...register('location')} />
-                  {errors.location && <div className="text-danger small">{errors.location.message}</div>}
+                  <Form.Label>Select Location on Map</Form.Label>
+                  <SubmissionMap setValue={setValue} />
                 </Form.Group>
-
-                <input type="hidden" {...register('submittedBy')} value={session?.user?.email || ''} />
+                <input
+                  type="hidden"
+                  {...register('submittedBy')}
+                  value={session?.user?.email || ''}
+                />
                 <input type="hidden" {...register('imageUrl')} />
 
                 <Button type="submit" variant="primary" className="me-2">
