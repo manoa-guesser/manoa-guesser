@@ -15,6 +15,13 @@ export const EditStuffSchema = Yup.object({
   owner: Yup.string().required(),
 });
 
+export const AddSubmissionSchema = Yup.object({
+  imageUrl: Yup.string().required('Image URL is required'),
+  caption: Yup.string().required(),
+  location: Yup.string().required('Location is required'),
+  submittedBy: Yup.string().required(),
+});
+
 // For creating a user (e.g. admin panel or signup form)
 export const AddUserSchema = Yup.object({
   email: Yup.string().email('Invalid email').required('Email is required'),
