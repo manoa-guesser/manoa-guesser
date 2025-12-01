@@ -1,9 +1,10 @@
 'use server';
 
-import { Stuff, Condition, User } from '@prisma/client';
+import { Stuff, Condition } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
+import type { EditUserFormValues } from '@/lib/validationSchemas';
 
 export type SubmissionFormData = {
   image?: FileList;
@@ -126,15 +127,15 @@ export async function changePassword(credentials: { email: string; password: str
 
 /**
  * Edits an existing user (for admin edit page).
- * @param user, a User object (we’ll mainly use id, email, username, role, score).
+ * Uses the EditUserFormValues type (no password).
  */
-export async function editUser(user: User) {
+export async function editUser(user: EditUserFormValues) {
   // console.log(`editUser data: ${JSON.stringify(user, null, 2)}`);
   await prisma.user.update({
     where: { id: user.id },
     data: {
       email: user.email,
-      username: user.username,
+      username: user.username ?? null,
       role: user.role,
       score: user.score,
       // password is NOT changed here

@@ -8,6 +8,14 @@ import { User } from '@prisma/client';
 import { EditUserSchema } from '@/lib/validationSchemas';
 import { editUser } from '@/lib/dbActions';
 
+type EditUserFormValues = {
+  id: number;
+  email: string;
+  role: 'ADMIN' | 'USER';
+  score: number;
+  username?: string | null;
+};
+
 const onSubmit = async (data: User) => {
   // console.log(`onSubmit data: ${JSON.stringify(data, null, 2)}`);
   await editUser(data);

@@ -35,6 +35,14 @@ export const AddUserSchema = Yup.object({
   score: Yup.number().integer('Score must be an integer').min(0, 'Score cannot be negative').default(0),
 });
 
+export type EditUserFormValues = {
+  id: number;
+  email: string;
+  username?: string | null;
+  role: 'USER' | 'ADMIN';
+  score: number;
+};
+
 // For editing a user in the admin edit page (no password here)
 export const EditUserSchema = Yup.object({
   id: Yup.number().required('ID is required'),
