@@ -185,7 +185,7 @@ const AdminPage = async () => {
                             {s.caption || `Submission #${s.id}`}
                           </div>
                           <div className="text-muted small">
-                            ID: 
+                            ID:
                             {s.id}
                           </div>
                         </td>
