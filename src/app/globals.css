@@ -26,7 +26,7 @@ body {
 
 .bg-home {
   min-height: 100vh;
-  background: fixed center url("/homepage_background.webp");
+  background: fixed center url('/homepage_background.webp');
   background-size: cover;
 }
 
@@ -254,4 +254,29 @@ body {
   gap: 1rem;
   margin-bottom: 1.5rem;
   justify-content: flex-start;
+}
+.swal-btn {
+  padding: 10px 24px !important;
+  border-radius: 8px !important;
+  font-size: 16px !important;
+}
+
+/* Green submit button */
+.swal-btn-submit {
+  background-color: var(--uh-green) !important;
+  color: white !important;
+}
+
+/* Blue play button */
+.swal-btn-play {
+  background-color: #007bff !important;
+  color: white !important;
+}
+
+/* Add spacing between the SweetAlert buttons */
+.swal-footer {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 20px !important; /* perfect spacing */
+  margin-top: 20px !important;
 }
