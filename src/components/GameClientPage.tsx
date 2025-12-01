@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic';
 import { Submission } from '@prisma/client';
 
 const GAME_TIME = 20;
-const WIN_DISTANCE = 50; // meters
+
 const LeafletMap = dynamic(() => import('@/components/GameMap'), {
   ssr: false,
 });
@@ -29,6 +29,13 @@ function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: numbe
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c;
+}
+function scoreFromDistance(distanceMeters: number): number {
+  if (distanceMeters < 10) return 100;
+  if (distanceMeters < 30) return 75;
+  if (distanceMeters < 60) return 50;
+  if (distanceMeters < 100) return 25;
+  return 0;
 }
 
 const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
@@ -58,7 +65,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   const endGame = useCallback(
     (finalScore: number) => {
       setIsGameOver(true);
-      swal('Game Over!', `Your final score: ${finalScore} / ${questions.length}`, 'info', { timer: 3000 });
+      swal('Game Over!', `Your final score: ${finalScore} / ${questions.length * 100}`, 'info', { timer: 5000 });
     },
     [questions.length],
   );
@@ -110,13 +117,16 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
 
     const distance = getDistanceMeters(guessLat, guessLng, currentQuestion.lat, currentQuestion.lng);
 
-    const guessCorrect = distance < WIN_DISTANCE;
+    const roundScore = scoreFromDistance(distance);
 
-    const updatedScore = guessCorrect ? score + 1 : score;
+    setScore((prev) => prev + roundScore);
 
-    if (guessCorrect) {
-      setScore(updatedScore);
-    }
+    swal({
+      title: `Distance: ${distance.toFixed(1)} meters`,
+      text: `You earned ${roundScore} points this round.`,
+      icon: roundScore > 0 ? 'success' : 'error',
+      timer: 5000,
+    });
 
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
@@ -124,7 +134,13 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
       setTimer(GAME_TIME);
       setShowHint(false);
     } else {
-      endGame(updatedScore);
+      swal({
+        title: `Distance: ${distance.toFixed(1)} meters`,
+        text: `You earned ${roundScore} points this round.`,
+        icon: roundScore > 0 ? 'success' : 'error',
+        timer: 5000,
+      });
+      endGame(score + roundScore);
     }
   };
 
@@ -153,9 +169,11 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                   {isGameOver && (
                     <div className="mt-3">
                       <div>Your last score:</div>
-                      <div>{score}</div>
-                      <div>/</div>
-                      <div>{questions.length}</div>
+                      <div>
+                        {score}
+                        /
+                        {questions.length * 100}
+                      </div>
                     </div>
                   )}
                 </div>
