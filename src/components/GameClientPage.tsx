@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic';
 import { Submission } from '@prisma/client';
 
 const GAME_TIME = 20;
+const STREAK_BONUS_POINTS = 25;
 
 const LeafletMap = dynamic(() => import('@/components/GameMap'), {
   ssr: false,
@@ -24,12 +25,14 @@ function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: numbe
   const Δφ = ((lat2 - lat1) * Math.PI) / 180;
   const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  const a =
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
   return R * c;
 }
+
 function scoreFromDistance(distanceMeters: number): number {
   if (distanceMeters < 10) return 100;
   if (distanceMeters < 30) return 75;
@@ -41,7 +44,6 @@ function scoreFromDistance(distanceMeters: number): number {
 const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   const questions = submissions.map((s) => {
     const [latStr, lngStr] = s.location.split(',').map((v) => v.trim());
-
     return {
       id: s.id,
       imageUrl: s.imageUrl,
@@ -51,16 +53,16 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
       lng: parseFloat(lngStr),
     };
   });
+
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswer, setUserAnswer] = useState('');
   const [timer, setTimer] = useState(GAME_TIME);
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [selectedLatLng, setSelectedLatLng] = useState<[number, number] | null>(null);
 
-  // 🔥 Streak system
+  // 🔥 STREAK SYSTEM
   const [streak, setStreak] = useState(0);
   const [streakBonus, setStreakBonus] = useState(0);
 
@@ -69,19 +71,22 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   const endGame = useCallback(
     (finalScore: number) => {
       setIsGameOver(true);
-      swal('Game Over!', `Your final score: ${finalScore} / ${questions.length * 100}`, 'info', { timer: 5000 });
+      swal(
+        'Game Over!',
+        `Your final score: ${finalScore} / ${questions.length * 100}`,
+        'info',
+        { timer: 5000 }
+      );
     },
-    [questions.length],
+    [questions.length]
   );
 
   const handleTimeUp = useCallback(() => {
-    // Reset streak when time runs out
     setStreak(0);
     setStreakBonus(0);
 
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
-      setUserAnswer('');
       setTimer(GAME_TIME);
       setShowHint(false);
     } else {
@@ -90,17 +95,13 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   }, [currentQuestionIndex, score, endGame, questions.length]);
 
   useEffect(() => {
-    if (!isGameStarted || isGameOver) return undefined;
-
+    if (!isGameStarted || isGameOver) return;
     if (timer <= 0) {
       handleTimeUp();
-      return undefined;
+      return;
     }
 
-    const interval = setInterval(() => {
-      setTimer((prev) => prev - 1);
-    }, 1000);
-
+    const interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
     return () => clearInterval(interval);
   }, [timer, isGameStarted, isGameOver, handleTimeUp]);
 
@@ -108,11 +109,11 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
     setIsGameStarted(true);
     setIsGameOver(false);
     setCurrentQuestionIndex(0);
-    setUserAnswer('');
     setScore(0);
     setTimer(GAME_TIME);
     setStreak(0);
     setStreakBonus(0);
+    setSelectedLatLng(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -124,34 +125,52 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
     }
 
     const [guessLat, guessLng] = selectedLatLng;
-
-    const distance = getDistanceMeters(guessLat, guessLng, currentQuestion.lat, currentQuestion.lng);
+    const distance = getDistanceMeters(
+      guessLat,
+      guessLng,
+      currentQuestion.lat,
+      currentQuestion.lng
+    );
 
     const roundScore = scoreFromDistance(distance);
 
-    setScore((prev) => prev + roundScore);
+    let bonus = 0;
+    let newStreak = streak;
+
+    // ✅ CORRECT GUESS
+    if (roundScore > 0) {
+      newStreak = streak + 1;
+
+      // Bonus only starts on second hit
+      bonus = newStreak >= 2 ? (newStreak - 1) * STREAK_BONUS_POINTS : 0;
+
+      setStreak(newStreak);
+      setStreakBonus(bonus);
+    }
+    // ❌ WRONG GUESS
+    else {
+      setStreak(0);
+      setStreakBonus(0);
+    }
+
+    const totalRoundScore = roundScore + bonus;
+    const newScore = score + totalRoundScore;
+    setScore(newScore);
 
     swal({
       title: `Distance: ${distance.toFixed(1)} meters`,
-      text: `You earned ${roundScore} points this round.`,
+      text: `You earned ${roundScore} points${bonus ? ` + ${bonus} streak bonus` : ''}!`,
       icon: roundScore > 0 ? 'success' : 'error',
       timer: 5000,
     });
 
-    // Move to next question
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
       setSelectedLatLng(null);
       setTimer(GAME_TIME);
       setShowHint(false);
     } else {
-      swal({
-        title: `Distance: ${distance.toFixed(1)} meters`,
-        text: `You earned ${roundScore} points this round.`,
-        icon: roundScore > 0 ? 'success' : 'error',
-        timer: 5000,
-      });
-      endGame(score + roundScore);
+      endGame(newScore);
     }
   };
 
@@ -161,7 +180,9 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
         <Col xs={6}>
           <Card>
             <Card.Body>
-              <Card.Title className="text-center mb-3 hero-title">Manoa Guesser</Card.Title>
+              <Card.Title className="text-center mb-3 hero-title">
+                Manoa Guesser
+              </Card.Title>
 
               {!isGameStarted || isGameOver ? (
                 <div className="text-center">
@@ -169,10 +190,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                     variant="primary"
                     size="lg"
                     onClick={startGame}
-                    style={{
-                      backgroundColor: '#1e6f43',
-                      borderColor: '#1e6f43',
-                    }}
+                    style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}
                   >
                     Start Game
                   </Button>
@@ -180,47 +198,43 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                   {isGameOver && (
                     <div className="mt-3">
                       <div>Your last score:</div>
-                      <div>
-                        {score}
-                        /
-                        {questions.length * 100}
-                      </div>
+                      <strong>
+                        {score} / {questions.length * 100}
+                      </strong>
                     </div>
                   )}
                 </div>
               ) : (
                 <>
-                  {/* 🔥 Streak indicator */}
+                  {/* 🔥 STREAK DISPLAY */}
                   <div className="d-flex justify-content-center mb-2">
                     <div
                       style={{
-                        backgroundColor: streak > 0 ? '#ffe08a' : '#eee',
-                        padding: '6px 14px',
-                        borderRadius: '20px',
+                        backgroundColor: streak ? '#ffe08a' : '#eee',
+                        padding: '6px 16px',
+                        borderRadius: '999px',
                         fontWeight: 'bold',
                         border: '1px solid #ccc',
+                        boxShadow: streak >= 3 ? '0 0 8px rgba(255,140,0,0.6)' : '',
                       }}
                     >
-                      🔥 Streak:
-                      {streak}
-                      {streak >= 3 && (
-                        <span style={{ marginLeft: '6px', color: '#d35400' }}>
-                          (+
-                          {streakBonus}
-                          bonus)
+                      🔥 Streak: {streak}
+                      {streak >= 2 && (
+                        <span style={{ marginLeft: 8, color: '#d35400' }}>
+                          (+{streakBonus})
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Hint button */}
+                  {/* Hint */}
                   <div className="d-flex justify-content-end mb-2">
                     <Button
                       variant="light"
                       style={{
                         borderRadius: '50%',
-                        width: '36px',
-                        height: '36px',
+                        width: 36,
+                        height: 36,
                         fontWeight: 'bold',
                         padding: 0,
                         border: '1px solid #ccc',
@@ -231,11 +245,9 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                     </Button>
                   </div>
 
-                  {/* Hint display */}
                   {showHint && (
                     <div className="hint-box mb-3">
-                      <strong>Hint: </strong>
-                      {currentQuestion.hint}
+                      <strong>Hint:</strong> {currentQuestion.hint}
                     </div>
                   )}
 
@@ -250,13 +262,11 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                     />
                   </div>
 
-                  <div className="mb-3">
-                    <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
-                  </div>
+                  <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
 
                   <ProgressBar
                     now={(timer / GAME_TIME) * 100}
-                    className="mb-3"
+                    className="my-3"
                     animated
                     striped
                     style={{ backgroundColor: '#cfe9d3' }}
@@ -271,18 +281,14 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                   <Form onSubmit={handleSubmit}>
                     <Button
                       type="submit"
-                      variant="primary"
                       className="w-100 mb-2"
-                      style={{
-                        backgroundColor: '#1e6f43',
-                        borderColor: '#1e6f43',
-                      }}
+                      style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}
                     >
                       Submit
                     </Button>
 
                     <div className="text-center">
-                      <div>Score:</div>
+                      <strong>Score:</strong>
                       <div>{score}</div>
                     </div>
                   </Form>
