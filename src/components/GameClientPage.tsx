@@ -60,6 +60,10 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   const [showHint, setShowHint] = useState(false);
   const [selectedLatLng, setSelectedLatLng] = useState<[number, number] | null>(null);
 
+  // 🔥 Streak system
+  const [streak, setStreak] = useState(0);
+  const [streakBonus, setStreakBonus] = useState(0);
+
   const currentQuestion = questions[currentQuestionIndex];
 
   const endGame = useCallback(
@@ -71,6 +75,10 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   );
 
   const handleTimeUp = useCallback(() => {
+    // Reset streak when time runs out
+    setStreak(0);
+    setStreakBonus(0);
+
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
       setUserAnswer('');
@@ -103,6 +111,8 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
     setUserAnswer('');
     setScore(0);
     setTimer(GAME_TIME);
+    setStreak(0);
+    setStreakBonus(0);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -128,6 +138,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
       timer: 5000,
     });
 
+    // Move to next question
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
       setSelectedLatLng(null);
@@ -179,6 +190,29 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                 </div>
               ) : (
                 <>
+                  {/* 🔥 Streak indicator */}
+                  <div className="d-flex justify-content-center mb-2">
+                    <div
+                      style={{
+                        backgroundColor: streak > 0 ? '#ffe08a' : '#eee',
+                        padding: '6px 14px',
+                        borderRadius: '20px',
+                        fontWeight: 'bold',
+                        border: '1px solid #ccc',
+                      }}
+                    >
+                      🔥 Streak:
+                      {streak}
+                      {streak >= 3 && (
+                        <span style={{ marginLeft: '6px', color: '#d35400' }}>
+                          (+
+                          {streakBonus}
+                          bonus)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Hint button */}
                   <div className="d-flex justify-content-end mb-2">
                     <Button
@@ -204,6 +238,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                       {currentQuestion.hint}
                     </div>
                   )}
+
                   <div className="text-center mb-3">
                     <Image
                       src={currentQuestion.imageUrl}
