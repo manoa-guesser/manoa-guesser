@@ -2,20 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import {
-  Button,
-  Card,
-  Col,
-  Container,
-  Form,
-  Row,
-  ProgressBar,
-} from 'react-bootstrap';
+import { Button, Card, Col, Container, Form, Row, ProgressBar } from 'react-bootstrap';
 import swal from 'sweetalert';
 import dynamic from 'next/dynamic';
 import { Submission } from '@prisma/client';
 
-const LeafletMap = dynamic(() => import('@/components/LeafletMap'), {
+const GAME_TIME = 20;
+const WIN_DISTANCE = 50; // meters
+const LeafletMap = dynamic(() => import('@/components/GameMap'), {
   ssr: false,
 });
 
@@ -23,15 +17,33 @@ interface GameClientPageProps {
   submissions: Submission[];
 }
 
-const GAME_TIME = 20;
+function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
 
 const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
-  const questions = submissions.map((s) => ({
-    id: s.id,
-    imageUrl: s.imageUrl,
-    correctAnswer: s.location, // You said location = answer
-    hint: s.caption, // Caption becomes the hint
-  }));
+  const questions = submissions.map((s) => {
+    const [latStr, lngStr] = s.location.split(',').map((v) => v.trim());
+
+    return {
+      id: s.id,
+      imageUrl: s.imageUrl,
+      correctAnswer: s.location,
+      hint: s.caption,
+      lat: parseFloat(latStr),
+      lng: parseFloat(lngStr),
+    };
+  });
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
@@ -39,18 +51,17 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const [selectedLatLng, setSelectedLatLng] = useState<[number, number] | null>(null);
 
   const currentQuestion = questions[currentQuestionIndex];
 
-  const endGame = useCallback((finalScore: number) => {
-    setIsGameOver(true);
-    swal(
-      'Game Over!',
-      `Your final score: ${finalScore} / ${questions.length}`,
-      'info',
-      { timer: 3000 },
-    );
-  }, [questions.length]);
+  const endGame = useCallback(
+    (finalScore: number) => {
+      setIsGameOver(true);
+      swal('Game Over!', `Your final score: ${finalScore} / ${questions.length}`, 'info', { timer: 3000 });
+    },
+    [questions.length],
+  );
 
   const handleTimeUp = useCallback(() => {
     if (currentQuestionIndex + 1 < questions.length) {
@@ -90,15 +101,26 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const guessCorrect = userAnswer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
+    if (!selectedLatLng) {
+      swal('No guess', 'Please drop a pin on the map!', 'warning');
+      return;
+    }
+
+    const [guessLat, guessLng] = selectedLatLng;
+
+    const distance = getDistanceMeters(guessLat, guessLng, currentQuestion.lat, currentQuestion.lng);
+
+    const guessCorrect = distance < WIN_DISTANCE;
 
     const updatedScore = guessCorrect ? score + 1 : score;
 
-    if (guessCorrect) setScore(updatedScore);
+    if (guessCorrect) {
+      setScore(updatedScore);
+    }
 
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
-      setUserAnswer('');
+      setSelectedLatLng(null);
       setTimer(GAME_TIME);
       setShowHint(false);
     } else {
@@ -112,9 +134,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
         <Col xs={6}>
           <Card>
             <Card.Body>
-              <Card.Title className="text-center mb-3">
-                Manoa Guesser
-              </Card.Title>
+              <Card.Title className="text-center mb-3 hero-title">Manoa Guesser</Card.Title>
 
               {!isGameStarted || isGameOver ? (
                 <div className="text-center">
@@ -178,7 +198,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                   </div>
 
                   <div className="mb-3">
-                    <LeafletMap />
+                    <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
                   </div>
 
                   <ProgressBar
@@ -196,17 +216,6 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                   </ProgressBar>
 
                   <Form onSubmit={handleSubmit}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Enter your guess:</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={userAnswer}
-                        onChange={(e) => setUserAnswer(e.target.value)}
-                        placeholder="Type the location name"
-                        required
-                      />
-                    </Form.Group>
-
                     <Button
                       type="submit"
                       variant="primary"
