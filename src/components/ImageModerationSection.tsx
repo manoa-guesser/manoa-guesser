@@ -67,7 +67,6 @@ export default function ImageModerationSection({
             </div>
             <Badge bg={pendingCount > 0 ? 'warning' : 'success'} pill>
               {pendingCount}
-              \
               &nbsp;pending
             </Badge>
           </div>
