@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { Button, Card, Col, Container, Form, Row, ProgressBar } from 'react-bootstrap';
+import {
+  Button,
+  Card,
+  Col,
+  Container,
+  Form,
+  Row,
+  ProgressBar,
+} from 'react-bootstrap';
 import swal from 'sweetalert';
 import dynamic from 'next/dynamic';
 import { Submission } from '@prisma/client';
@@ -18,16 +26,20 @@ interface GameClientPageProps {
   submissions: Submission[];
 }
 
-function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+function getDistanceMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) {
   const R = 6371e3;
   const φ1 = (lat1 * Math.PI) / 180;
   const φ2 = (lat2 * Math.PI) / 180;
   const Δφ = ((lat2 - lat1) * Math.PI) / 180;
   const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-  const a =
-    Math.sin(Δφ / 2) ** 2 +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  const a = Math.sin(Δφ / 2) ** 2
+    + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
@@ -60,9 +72,10 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const [selectedLatLng, setSelectedLatLng] = useState<[number, number] | null>(null);
+  const [selectedLatLng, setSelectedLatLng] = useState<[number, number] | null>(
+    null,
+  );
 
-  // 🔥 STREAK SYSTEM
   const [streak, setStreak] = useState(0);
   const [streakBonus, setStreakBonus] = useState(0);
 
@@ -73,12 +86,12 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
       setIsGameOver(true);
       swal(
         'Game Over!',
-        `Your final score: ${finalScore} / ${questions.length * 100}`,
+        `Your final score:\n ${finalScore} / ${questions.length * 100}`,
         'info',
-        { timer: 5000 }
+        { timer: 5000 },
       );
     },
-    [questions.length]
+    [questions.length],
   );
 
   const handleTimeUp = useCallback(() => {
@@ -96,12 +109,17 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
 
   useEffect(() => {
     if (!isGameStarted || isGameOver) return;
+
     if (timer <= 0) {
       handleTimeUp();
       return;
     }
 
-    const interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+    const interval = setInterval(() => {
+      setTimer((prev) => prev - 1);
+      return null;
+    }, 1000);
+
     return () => clearInterval(interval);
   }, [timer, isGameStarted, isGameOver, handleTimeUp]);
 
@@ -125,11 +143,12 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
     }
 
     const [guessLat, guessLng] = selectedLatLng;
+
     const distance = getDistanceMeters(
       guessLat,
       guessLng,
       currentQuestion.lat,
-      currentQuestion.lng
+      currentQuestion.lng,
     );
 
     const roundScore = scoreFromDistance(distance);
@@ -137,29 +156,27 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
     let bonus = 0;
     let newStreak = streak;
 
-    // ✅ CORRECT GUESS
     if (roundScore > 0) {
       newStreak = streak + 1;
-
-      // Bonus only starts on second hit
       bonus = newStreak >= 2 ? (newStreak - 1) * STREAK_BONUS_POINTS : 0;
 
       setStreak(newStreak);
       setStreakBonus(bonus);
-    }
-    // ❌ WRONG GUESS
-    else {
+    } else {
       setStreak(0);
       setStreakBonus(0);
     }
 
     const totalRoundScore = roundScore + bonus;
     const newScore = score + totalRoundScore;
+
     setScore(newScore);
 
     swal({
-      title: `Distance: ${distance.toFixed(1)} meters`,
-      text: `You earned ${roundScore} points${bonus ? ` + ${bonus} streak bonus` : ''}!`,
+      title: `Distance:\n ${distance.toFixed(1)} meters`,
+      text: `You earned ${roundScore} points${
+        bonus ? ` + ${bonus} streak bonus` : ''
+      }`,
       icon: roundScore > 0 ? 'success' : 'error',
       timer: 5000,
     });
@@ -190,7 +207,10 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                     variant="primary"
                     size="lg"
                     onClick={startGame}
-                    style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}
+                    style={{
+                      backgroundColor: '#1e6f43',
+                      borderColor: '#1e6f43',
+                    }}
                   >
                     Start Game
                   </Button>
@@ -199,14 +219,15 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                     <div className="mt-3">
                       <div>Your last score:</div>
                       <strong>
-                        {score} / {questions.length * 100}
+                        {score}
+                        {' / '}
+                        {questions.length * 100}
                       </strong>
                     </div>
                   )}
                 </div>
               ) : (
                 <>
-                  {/* 🔥 STREAK DISPLAY */}
                   <div className="d-flex justify-content-center mb-2">
                     <div
                       style={{
@@ -215,19 +236,24 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                         borderRadius: '999px',
                         fontWeight: 'bold',
                         border: '1px solid #ccc',
-                        boxShadow: streak >= 3 ? '0 0 8px rgba(255,140,0,0.6)' : '',
+                        boxShadow:
+                          streak >= 3
+                            ? '0 0 8px rgba(255,140,0,0.6)'
+                            : undefined,
                       }}
                     >
-                      🔥 Streak: {streak}
+                      <span>🔥 Streak: </span>
+                      <span>{streak}</span>
                       {streak >= 2 && (
                         <span style={{ marginLeft: 8, color: '#d35400' }}>
-                          (+{streakBonus})
+                          (
+                          {streakBonus}
+                          )
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Hint */}
                   <div className="d-flex justify-content-end mb-2">
                     <Button
                       variant="light"
@@ -239,7 +265,9 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                         padding: 0,
                         border: '1px solid #ccc',
                       }}
-                      onClick={() => setShowHint((prev) => !prev)}
+                      onClick={() => {
+                        setShowHint((prev) => !prev);
+                      }}
                     >
                       ?
                     </Button>
@@ -247,7 +275,9 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
 
                   {showHint && (
                     <div className="hint-box mb-3">
-                      <strong>Hint:</strong> {currentQuestion.hint}
+                      <strong>Hint:</strong>
+                      <br />
+                      {currentQuestion.hint}
                     </div>
                   )}
 
@@ -262,7 +292,11 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                     />
                   </div>
 
-                  <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
+                  <LeafletMap
+                    onSelectLocation={(lat, lng) => {
+                      setSelectedLatLng([lat, lng]);
+                    }}
+                  />
 
                   <ProgressBar
                     now={(timer / GAME_TIME) * 100}
@@ -282,14 +316,18 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                     <Button
                       type="submit"
                       className="w-100 mb-2"
-                      style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}
+                      style={{
+                        backgroundColor: '#1e6f43',
+                        borderColor: '#1e6f43',
+                      }}
                     >
                       Submit
                     </Button>
 
                     <div className="text-center">
                       <strong>Score:</strong>
-                      <div>{score}</div>
+                      <br />
+                      {score}
                     </div>
                   </Form>
                 </>
