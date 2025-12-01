@@ -12,7 +12,6 @@ export type ModerationSubmission = {
   submittedBy: string;
   status: SubmissionStatus;
   createdAt: string; // ISO string
-  reportCount: number;
 };
 
 function getStatusVariant(status: SubmissionStatus): 'warning' | 'success' | 'secondary' {
@@ -67,8 +66,7 @@ export default function ImageModerationSection({
               </p>
             </div>
             <Badge bg={pendingCount > 0 ? 'warning' : 'success'} pill>
-              {pendingCount}
-              &nbsp;pending
+              {pendingCount}&nbsp;pending
             </Badge>
           </div>
 
@@ -86,7 +84,6 @@ export default function ImageModerationSection({
                   <th>Status</th>
                   <th>Uploaded</th>
                   <th>Actions</th>
-                  <th>Reports</th>
                 </tr>
               </thead>
               <tbody>
@@ -109,16 +106,11 @@ export default function ImageModerationSection({
                       <div className="fw-semibold">
                         {s.caption || `Submission #${s.id}`}
                       </div>
-                      <div className="text-muted small">
-                        ID:
-                        {s.id}
-                      </div>
+                      <div className="text-muted small">ID: {s.id}</div>
                     </td>
                     <td>{s.submittedBy || 'Unknown'}</td>
                     <td>
-                      <Badge bg={getStatusVariant(s.status)}>
-                        {s.status}
-                      </Badge>
+                      <Badge bg={getStatusVariant(s.status)}>{s.status}</Badge>
                     </td>
                     <td>{new Date(s.createdAt).toLocaleString()}</td>
                     <td>
@@ -149,7 +141,6 @@ export default function ImageModerationSection({
                         </Button>
                       </div>
                     </td>
-                    <td>{s.reportCount ?? 0}</td>
                   </tr>
                 ))}
               </tbody>
