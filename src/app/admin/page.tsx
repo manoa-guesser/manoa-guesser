@@ -1,9 +1,11 @@
+// app/admin/page.tsx (or wherever your AdminPage lives)
 import { getServerSession } from 'next-auth';
 import { Col, Container, Row, Table, Badge, Button, Card } from 'react-bootstrap';
 import prisma from '@/lib/prisma';
 import { adminProtectedPage } from '@/lib/page-protection';
 import authOptions from '@/lib/authOptions';
 import Link from 'next/link';
+import ImageModerationSection from '@/components/ImageModerationSection';
 
 const AdminPage = async () => {
   const session = await getServerSession(authOptions);
@@ -17,6 +19,12 @@ const AdminPage = async () => {
   const users = await prisma.user.findMany({});
 
   const adminCount = users.filter((user) => user.role === 'ADMIN').length;
+
+  // 🔹 Fetch PENDING submissions for moderation
+  const pendingSubmissions = await prisma.submission.findMany({
+    where: { status: 'PENDING' },
+    orderBy: { createdAt: 'desc' },
+  });
 
   return (
     <main className="min-vh-100 py-4">
@@ -50,7 +58,7 @@ const AdminPage = async () => {
           </Col>
         </Row>
 
-        {/* SECTION 1: Users – Players & Scores (replaces Stuff section) */}
+        {/* SECTION 1: Users – Players & Scores */}
         <Row className="mb-5">
           <Col>
             <Card className="shadow-sm rounded-4 admin-card p-4">
@@ -84,7 +92,6 @@ const AdminPage = async () => {
                       <td>{user.role}</td>
                       <td>{user.score}</td>
                       <td>
-                        {/* Wire this route up to your EditUserPage path */}
                         <Link href={`/edit/${user.id}`}>
                           <Button variant="outline-primary" size="sm">
                             Edit User
@@ -99,48 +106,18 @@ const AdminPage = async () => {
           </Col>
         </Row>
 
-        {/* SECTION 3: Image Moderation layout only */}
-        <Row className="mb-5">
-          <Col>
-            <Card className="shadow-sm rounded-4 admin-card p-4">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                  <h2 className="fw-bold mb-1 hero-subtitle">Image Moderation</h2>
-                  <p className="text-muted mb-0">
-                    This section will be used to review and delete game images that
-                    are not appropriate or do not fit the app. For now, this is just
-                    the layout.
-                  </p>
-                </div>
-                <Badge bg="warning" pill>
-                  0&nbsp;pending
-                </Badge>
-              </div>
-              <Table striped bordered hover responsive className="mb-0">
-                <thead>
-                  <tr>
-                    <th>Preview</th>
-                    <th>Title / ID</th>
-                    <th>Uploader</th>
-                    <th>Status</th>
-                    <th>Uploaded</th>
-                    <th>Actions</th>
-                    <th>Reports</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td colSpan={7} className="text-center text-muted py-4">
-                      Image moderation is not set up yet. Once the image model and
-                      routes are ready, this table will list pending images with a
-                      Delete button for each.
-                    </td>
-                  </tr>
-                </tbody>
-              </Table>
-            </Card>
-          </Col>
-        </Row>
+        {/* SECTION 3: Image Moderation – wired to real data */}
+        <ImageModerationSection
+          initialSubmissions={pendingSubmissions.map((s) => ({
+            id: s.id,
+            imageUrl: s.imageUrl,
+            caption: s.caption,
+            submittedBy: s.submittedBy,
+            status: s.status,
+            createdAt: s.createdAt.toISOString(),
+            reportCount: s.reportCount ?? 0,
+          }))}
+        />
       </Container>
     </main>
   );
