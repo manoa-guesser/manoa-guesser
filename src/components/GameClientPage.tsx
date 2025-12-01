@@ -120,7 +120,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
       return null;
     }, 1000);
 
-    return () => clearInterval(interval);
+    clearInterval(interval);
   }, [timer, isGameStarted, isGameOver, handleTimeUp]);
 
   const startGame = () => {
