@@ -15,12 +15,12 @@ interface Player {
 
 export default function LeaderboardPage() {
   const [players, setPlayers] = useState<Player[]>([]);
-  const [sortLabel, setSortLabel] = useState("Best Score");
-  const [sortType, setSortType] = useState<"score" | "accuracy" | "average">("score");
+  const [sortLabel, setSortLabel] = useState('Best Score');
+  const [sortType, setSortType] = useState<'score' | 'accuracy' | 'average'>('score');
 
   // NEW
-  const [timeLabel, setTimeLabel] = useState("All Time");
-  const [timeFilter, setTimeFilter] = useState<"all" | "week" | "month">("all");
+  const [timeLabel, setTimeLabel] = useState('All Time');
+  const [timeFilter, setTimeFilter] = useState<'all' | 'week' | 'month'>('all');
 
   useEffect(() => {
     const loadLeaderboard = async () => {
@@ -37,7 +37,7 @@ export default function LeaderboardPage() {
         accuracy: player.accuracy ?? null,
         average: player.average ?? null,
 
-        createdAt: player.createdAt ?? new Date().toISOString() // TEMP
+        createdAt: player.createdAt ?? new Date().toISOString(), // TEMP
       }));
 
       setPlayers(formatted);
@@ -47,22 +47,20 @@ export default function LeaderboardPage() {
   }, []);
 
   // SORTING
-  const applySort = (type: "score" | "accuracy" | "average", label: string) => {
+  const applySort = (type: 'score' | 'accuracy' | 'average', label: string) => {
     setSortType(type);
     setSortLabel(label);
 
-    setPlayers((p) =>
-      [...p].sort((a, b) => {
-        const A = (a as any)[type] ?? 0;
-        const B = (b as any)[type] ?? 0;
-        return B - A;
-      })
-    );
+    setPlayers((p) => [...p].sort((a, b) => {
+      const A = (a as any)[type] ?? 0;
+      const B = (b as any)[type] ?? 0;
+      return B - A;
+    }));
   };
 
   // TIME FILTERING (dummy logic for now)
   const filterByTime = (list: Player[]) => {
-    if (timeFilter === "all") return list;
+    if (timeFilter === 'all') return list;
 
     const now = new Date().getTime();
 
@@ -70,8 +68,8 @@ export default function LeaderboardPage() {
       const created = new Date(p.createdAt!).getTime();
       const diff = now - created;
 
-      if (timeFilter === "week") return diff <= 7 * 24 * 60 * 60 * 1000;
-      if (timeFilter === "month") return diff <= 30 * 24 * 60 * 60 * 1000;
+      if (timeFilter === 'week') return diff <= 7 * 24 * 60 * 60 * 1000;
+      if (timeFilter === 'month') return diff <= 30 * 24 * 60 * 60 * 1000;
       return true;
     });
   };
@@ -93,7 +91,10 @@ export default function LeaderboardPage() {
           <div className="top-card top-second">
             <div className="medal">🥈</div>
             <h3>{topThree[1].name}</h3>
-            <p>Score: {topThree[1].score}</p>
+            <p>
+              Score:
+              {topThree[1].score}
+            </p>
           </div>
         )}
 
@@ -101,7 +102,10 @@ export default function LeaderboardPage() {
           <div className="top-card top-first">
             <div className="medal">🥇</div>
             <h3>{topThree[0].name}</h3>
-            <p>Score: {topThree[0].score}</p>
+            <p>
+              Score:
+              {topThree[0].score}
+            </p>
           </div>
         )}
 
@@ -109,35 +113,27 @@ export default function LeaderboardPage() {
           <div className="top-card top-third">
             <div className="medal">🥉</div>
             <h3>{topThree[2].name}</h3>
-            <p>Score: {topThree[2].score}</p>
+            <p>
+              Score:
+              {topThree[2].score}
+            </p>
           </div>
         )}
       </div>
 
       {/* LEADERBOARD CARD */}
       <div className="leaderboard-card">
-
         {/* FILTER BAR WITH TWO DROPDOWNS */}
         <div className="filter-bar">
-
           {/* SORT */}
-          <DropdownButton
-            id="sort-dropdown"
-            title={sortLabel}
-            variant="success"
-            className="leaderboard-dropdown px-3"
-          >
-            <Dropdown.Item onClick={() => applySort("score", "Best Score")}>
-              Best Score
-            </Dropdown.Item>
+          <DropdownButton id="sort-dropdown" title={sortLabel} variant="success" className="leaderboard-dropdown px-3">
+            <Dropdown.Item onClick={() => applySort('score', 'Best Score')}>Best Score</Dropdown.Item>
 
-            <Dropdown.Item onClick={() => applySort("average", "Average Performance")}>
+            <Dropdown.Item onClick={() => applySort('average', 'Average Performance')}>
               Average Performance
             </Dropdown.Item>
 
-            <Dropdown.Item onClick={() => applySort("accuracy", "Accuracy")}>
-              Accuracy
-            </Dropdown.Item>
+            <Dropdown.Item onClick={() => applySort('accuracy', 'Accuracy')}>Accuracy</Dropdown.Item>
           </DropdownButton>
 
           {/* TIME FILTER */}
@@ -147,19 +143,33 @@ export default function LeaderboardPage() {
             variant="secondary"
             className="leaderboard-dropdown px-3 ms-3"
           >
-            <Dropdown.Item onClick={() => { setTimeFilter("all"); setTimeLabel("All Time"); }}>
+            <Dropdown.Item
+              onClick={() => {
+                setTimeFilter('all');
+                setTimeLabel('All Time');
+              }}
+            >
               All Time
             </Dropdown.Item>
 
-            <Dropdown.Item onClick={() => { setTimeFilter("week"); setTimeLabel("Past Week"); }}>
+            <Dropdown.Item
+              onClick={() => {
+                setTimeFilter('week');
+                setTimeLabel('Past Week');
+              }}
+            >
               Past Week
             </Dropdown.Item>
 
-            <Dropdown.Item onClick={() => { setTimeFilter("month"); setTimeLabel("Past Month"); }}>
+            <Dropdown.Item
+              onClick={() => {
+                setTimeFilter('month');
+                setTimeLabel('Past Month');
+              }}
+            >
               Past Month
             </Dropdown.Item>
           </DropdownButton>
-
         </div>
 
         {/* TABLE */}
@@ -169,9 +179,9 @@ export default function LeaderboardPage() {
               <th>#</th>
               <th>Player</th>
 
-              {sortType === "score" && <th>Best Score</th>}
-              {sortType === "accuracy" && <th>Accuracy</th>}
-              {sortType === "average" && <th>Average</th>}
+              {sortType === 'score' && <th>Best Score</th>}
+              {sortType === 'accuracy' && <th>Accuracy</th>}
+              {sortType === 'average' && <th>Average</th>}
             </tr>
           </thead>
 
@@ -181,14 +191,13 @@ export default function LeaderboardPage() {
                 <td>{index + 4}</td>
                 <td>{player.name}</td>
 
-                {sortType === "score" && <td>{player.score}</td>}
-                {sortType === "accuracy" && <td>{player.accuracy ?? '—'}</td>}
-                {sortType === "average" && <td>{player.average ?? '—'}</td>}
+                {sortType === 'score' && <td>{player.score}</td>}
+                {sortType === 'accuracy' && <td>{player.accuracy ?? '—'}</td>}
+                {sortType === 'average' && <td>{player.average ?? '—'}</td>}
               </tr>
             ))}
           </tbody>
         </Table>
-
       </div>
     </main>
   );
