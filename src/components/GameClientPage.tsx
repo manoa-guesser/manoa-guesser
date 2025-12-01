@@ -29,9 +29,10 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   const questions = submissions.map((s) => ({
     id: s.id,
     imageUrl: s.imageUrl,
-    correctAnswer: s.location, // You said location = answer
-    hint: s.caption, // Caption becomes the hint
+    correctAnswer: s.location,
+    hint: s.caption,
   }));
+
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
@@ -40,19 +41,30 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   const [isGameOver, setIsGameOver] = useState(false);
   const [showHint, setShowHint] = useState(false);
 
+  // 🔥 Streak system
+  const [streak, setStreak] = useState(0);
+  const [streakBonus, setStreakBonus] = useState(0);
+
   const currentQuestion = questions[currentQuestionIndex];
 
-  const endGame = useCallback((finalScore: number) => {
-    setIsGameOver(true);
-    swal(
-      'Game Over!',
-      `Your final score: ${finalScore} / ${questions.length}`,
-      'info',
-      { timer: 3000 },
-    );
-  }, [questions.length]);
+  const endGame = useCallback(
+    (finalScore: number) => {
+      setIsGameOver(true);
+      swal(
+        'Game Over!',
+        `Your final score: ${finalScore} / ${questions.length}`,
+        'info',
+        { timer: 3000 },
+      );
+    },
+    [questions.length],
+  );
 
   const handleTimeUp = useCallback(() => {
+    // Reset streak when time runs out
+    setStreak(0);
+    setStreakBonus(0);
+
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
       setUserAnswer('');
@@ -85,17 +97,43 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
     setUserAnswer('');
     setScore(0);
     setTimer(GAME_TIME);
+    setStreak(0);
+    setStreakBonus(0);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const guessCorrect = userAnswer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
+    const guessCorrect = userAnswer.trim().toLowerCase()
+    === currentQuestion.correctAnswer.toLowerCase();
 
-    const updatedScore = guessCorrect ? score + 1 : score;
+    let updatedScore = score;
 
-    if (guessCorrect) setScore(updatedScore);
+    if (guessCorrect) {
+      const newStreak = streak + 1;
+      setStreak(newStreak);
 
+      updatedScore += 1; // Base point
+
+      // 🔥 Bonus every 3 streaks
+      if (newStreak % 3 === 0) {
+        updatedScore += 1;
+        setStreakBonus((prev) => prev + 1);
+        swal(
+          '🔥 Streak Bonus!',
+          `You earned +1 bonus for a ${newStreak} streak!`,
+          'success',
+        );
+      }
+
+      setScore(updatedScore);
+    } else {
+      // Wrong answer resets streak
+      setStreak(0);
+      setStreakBonus(0);
+    }
+
+    // Move to next question
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
       setUserAnswer('');
@@ -141,6 +179,29 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                 </div>
               ) : (
                 <>
+                  {/* 🔥 Streak indicator */}
+                  <div className="d-flex justify-content-center mb-2">
+                    <div
+                      style={{
+                        backgroundColor: streak > 0 ? '#ffe08a' : '#eee',
+                        padding: '6px 14px',
+                        borderRadius: '20px',
+                        fontWeight: 'bold',
+                        border: '1px solid #ccc',
+                      }}
+                    >
+                      🔥 Streak:
+                      {streak}
+                      {streak >= 3 && (
+                        <span style={{ marginLeft: '6px', color: '#d35400' }}>
+                          (+
+                          {streakBonus}
+                          bonus)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Hint button */}
                   <div className="d-flex justify-content-end mb-2">
                     <Button
@@ -166,6 +227,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                       {currentQuestion.hint}
                     </div>
                   )}
+
                   <div className="text-center mb-3">
                     <Image
                       src={currentQuestion.imageUrl}
