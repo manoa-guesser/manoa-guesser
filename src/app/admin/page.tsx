@@ -158,7 +158,7 @@ const AdminPage = async () => {
                     <tr>
                       <th>Preview</th>
                       <th>Title / ID</th>
-                      <th>Uploader</th>
+                      <th>Submitted By</th>
                       <th>Status</th>
                       <th>Uploaded</th>
                       <th>Reports</th>
