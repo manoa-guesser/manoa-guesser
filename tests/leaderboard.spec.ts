@@ -1,7 +1,7 @@
 import { test } from '@playwright/test';
 
 test.use({
-  storageState: 'john-auth.json'
+  storageState: 'tests/playwright-auth-sessions/john-auth.json',
 });
 
 test('test', async ({ page }) => {
