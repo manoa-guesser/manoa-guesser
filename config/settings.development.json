@@ -16,30 +16,86 @@
     }
   ],
 
-  "defaultData": [
+  "defaultLocations": [
     {
-      "name": "Basket",
-      "quantity": 3,
-      "owner": "john@foo.com",
-      "condition": "excellent"
+      "imageUrl": "https://kbtrxmscmhxeyppkgzbw.supabase.co/storage/v1/object/public/submissions/1764796612185-hamilton.jpg",
+      "caption": "The main library at UH Mānoa",
+      "location": "21.300252262571178, -157.81581061419902",
+      "submittedBy": "admin@foo.com",
+      "status": "APPROVED",
+      "reportCount": 0
     },
     {
-      "name": "Bicycle",
-      "quantity": 2,
-      "owner": "john@foo.com",
-      "condition": "poor"
+      "imageUrl": "https://kbtrxmscmhxeyppkgzbw.supabase.co/storage/v1/object/public/submissions/1764796648936-campus-center.jpg",
+      "caption": "A hub for food, events, and student activities",
+      "location": "21.298432989269454, -157.81876168015197",
+      "submittedBy": "admin@foo.com",
+      "status": "APPROVED",
+      "reportCount": 0
     },
     {
-      "name": "Banana",
-      "quantity": 2,
-      "owner": "admin@foo.com",
-      "condition": "good"
+      "imageUrl": "https://kbtrxmscmhxeyppkgzbw.supabase.co/storage/v1/object/public/submissions/1764796669928-kuykendall.png",
+      "caption": "Named after a former UH president",
+      "location": "21.298290545216858, -157.81798366552763",
+      "submittedBy": "admin@foo.com",
+      "status": "APPROVED",
+      "reportCount": 0
     },
     {
-      "name": "Boogie Board",
-      "quantity": 2,
-      "owner": "admin@foo.com",
-      "condition": "excellent"
+      "imageUrl": "https://kbtrxmscmhxeyppkgzbw.supabase.co/storage/v1/object/public/submissions/1764796711326-frear-hall.png",
+      "caption": "One of the main student housing buildings",
+      "location": "21.29552910253138, -157.8139814904591",
+      "submittedBy": "admin@foo.com",
+      "status": "APPROVED",
+      "reportCount": 0
+    },
+    {
+      "imageUrl": "https://kbtrxmscmhxeyppkgzbw.supabase.co/storage/v1/object/public/submissions/1764796761098-sakamaki-hall.png",
+      "caption": "Connected to Moore Hall",
+      "location": "21.29699854636455, -157.81700217023933",
+      "submittedBy": "admin@foo.com",
+      "status": "APPROVED",
+      "reportCount": 0
+    },
+    {
+      "imageUrl": "https://kbtrxmscmhxeyppkgzbw.supabase.co/storage/v1/object/public/submissions/1764796787804-life-sciences-building.png",
+      "caption": "New STEM facility opened in 2020",
+      "location": "21.30014230713198, -157.8153172497496",
+      "submittedBy": "admin@foo.com",
+      "status": "APPROVED",
+      "reportCount": 0
+    },
+    {
+      "imageUrl": "https://kbtrxmscmhxeyppkgzbw.supabase.co/storage/v1/object/public/submissions/1764796814860-holmes-hall.png",
+      "caption": "Where the College of Engineering is located",
+      "location": "21.296553716278428, -157.8155479497266",
+      "submittedBy": "admin@foo.com",
+      "status": "APPROVED",
+      "reportCount": 0
+    },
+    {
+      "imageUrl": "https://kbtrxmscmhxeyppkgzbw.supabase.co/storage/v1/object/public/submissions/1764796836551-hawaii-hall.png",
+      "caption": "One of the oldest buildings on campus",
+      "location": "21.299897406085318, -157.81881561114875",
+      "submittedBy": "admin@foo.com",
+      "status": "APPROVED",
+      "reportCount": 0
+    },
+    {
+      "imageUrl": "https://kbtrxmscmhxeyppkgzbw.supabase.co/storage/v1/object/public/submissions/1764796867745-east-west-complex.png",
+      "caption": "International research organization",
+      "location": "21.29903775020109, -157.81445326402877",
+      "submittedBy": "admin@foo.com",
+      "status": "APPROVED",
+      "reportCount": 0
+    },
+    {
+      "imageUrl": "https://kbtrxmscmhxeyppkgzbw.supabase.co/storage/v1/object/public/submissions/1764796891483-japanese-garden.png",
+      "caption": "A peaceful hidden spot between buildings",
+      "location": "21.299502564762903, -157.81379329300262",
+      "submittedBy": "admin@foo.com",
+      "status": "APPROVED",
+      "reportCount": 0
     }
   ]
 }
