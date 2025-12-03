@@ -110,18 +110,20 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   useEffect(() => {
     if (!isGameStarted || isGameOver) return;
 
-    if (timer <= 0) {
-      handleTimeUp();
-      return;
-    }
-
     const interval = setInterval(() => {
-      setTimer((prev) => prev - 1);
-      return null;
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleTimeUp();
+          return GAME_TIME;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
-    clearInterval(interval);
-  }, [timer, isGameStarted, isGameOver, handleTimeUp]);
+    return () => clearInterval(interval);
+  }, [isGameStarted, isGameOver, handleTimeUp]);
+
 
   const startGame = () => {
     setIsGameStarted(true);
