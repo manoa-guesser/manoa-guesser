@@ -5,6 +5,7 @@ import { adminProtectedPage } from '@/lib/page-protection';
 import authOptions from '@/lib/authOptions';
 import Link from 'next/link';
 import ImageModerationSection from '@/components/ImageModerationSection';
+import ReportedImagesSection from '@/components/ReportedImagesSection';
 
 const AdminPage = async () => {
   const session = await getServerSession(authOptions);
@@ -14,7 +15,6 @@ const AdminPage = async () => {
     } | null,
   );
 
-  // Fetch data
   const stuff = await prisma.stuff.findMany({});
   const users = await prisma.user.findMany({});
   const adminCount = users.filter((user) => user.role === 'ADMIN').length;
@@ -34,14 +34,14 @@ const AdminPage = async () => {
   return (
     <main className="min-vh-100 py-4">
       <Container id="list" fluid className="py-3">
-        {/* Page Header */}
+        {/* Page header */}
         <Row className="mb-4">
           <Col>
             <h1 className="display-4 fw-bold hero-title">Admin Dashboard</h1>
           </Col>
         </Row>
 
-        {/* Quick Stats */}
+        {/* Quick stats */}
         <Row className="mb-4">
           <Col md={4} className="mb-3 mb-md-0">
             <Card className="shadow-sm rounded-4 p-3">
@@ -49,14 +49,12 @@ const AdminPage = async () => {
               <h3 className="mb-0">{stuff.length}</h3>
             </Card>
           </Col>
-
           <Col md={4} className="mb-3 mb-md-0">
             <Card className="shadow-sm rounded-4 p-3">
               <h6 className="text-muted text-uppercase mb-1">Total Users</h6>
               <h3 className="mb-0">{users.length}</h3>
             </Card>
           </Col>
-
           <Col md={4}>
             <Card className="shadow-sm rounded-4 p-3">
               <h6 className="text-muted text-uppercase mb-1">Admins</h6>
@@ -65,7 +63,7 @@ const AdminPage = async () => {
           </Col>
         </Row>
 
-        {/* Section 1: User List */}
+        {/* SECTION 1: Users */}
         <Row className="mb-5">
           <Col>
             <Card className="shadow-sm rounded-4 admin-card p-4">
@@ -74,10 +72,9 @@ const AdminPage = async () => {
                   <h2 className="fw-bold mb-1 hero-subtitle">Players Information</h2>
                   <p className="text-muted mb-0">View all users along with their usernames, roles, and scores.</p>
                 </div>
-
                 <Badge bg="success" pill>
                   {users.length}
-                  players
+                  &nbsp;players
                 </Badge>
               </div>
 
@@ -91,7 +88,6 @@ const AdminPage = async () => {
                     <th>Actions</th>
                   </tr>
                 </thead>
-
                 <tbody>
                   {users.map((user) => (
                     <tr key={user.id}>
@@ -114,7 +110,7 @@ const AdminPage = async () => {
           </Col>
         </Row>
 
-        {/* Section 2: Pending Moderation */}
+        {/* SECTION 2: Pending Image Moderation */}
         <ImageModerationSection
           initialSubmissions={pendingSubmissions.map((s) => ({
             id: s.id,
@@ -126,74 +122,17 @@ const AdminPage = async () => {
           }))}
         />
 
-        {/* Section 3: Reported Images */}
-        <Row className="mb-5">
-          <Col>
-            <Card className="shadow-sm rounded-4 admin-card p-4">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                  <h2 className="fw-bold mb-1 hero-subtitle">Reported Images</h2>
-                  <p className="text-muted mb-0">Images flagged by players.</p>
-                </div>
-
-                <Badge bg={reportedSubmissions.length > 0 ? 'danger' : 'secondary'} pill>
-                  {reportedSubmissions.length}
-                  reported
-                </Badge>
-              </div>
-
-              {reportedSubmissions.length === 0 ? (
-                <p className="text-center text-muted py-4 mb-0">No reported images.</p>
-              ) : (
-                <Table striped bordered hover responsive>
-                  <thead>
-                    <tr>
-                      <th>Preview</th>
-                      <th>Caption / ID</th>
-                      <th>Submitted By</th>
-                      <th>Reported By</th>
-                      <th>Reports</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {reportedSubmissions.map((s) => (
-                      <tr key={s.id}>
-                        <td>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={s.imageUrl}
-                            alt={s.caption || `Submission ${s.id}`}
-                            style={{
-                              width: '80px',
-                              height: '80px',
-                              objectFit: 'cover',
-                              borderRadius: '0.75rem',
-                            }}
-                          />
-                        </td>
-
-                        <td>
-                          <div className="fw-semibold">{s.caption || `Submission #${s.id}`}</div>
-                          <div className="text-muted small">
-                            ID:
-                            {s.id}
-                          </div>
-                        </td>
-
-                        <td>{s.submittedBy}</td>
-
-                        <td>{Array.isArray(s.reporters) && s.reporters.length > 0 ? s.reporters.join(', ') : '—'}</td>
-
-                        <td>{s.reportCount}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              )}
-            </Card>
-          </Col>
-        </Row>
+        {/* SECTION 3: Reported Images with actions */}
+        <ReportedImagesSection
+          initialSubmissions={reportedSubmissions.map((s) => ({
+            id: s.id,
+            imageUrl: s.imageUrl,
+            caption: s.caption,
+            submittedBy: s.submittedBy,
+            reporters: Array.isArray(s.reporters) ? (s.reporters as string[]) : [],
+            reportCount: s.reportCount,
+          }))}
+        />
       </Container>
     </main>
   );
