@@ -14,41 +14,34 @@ const AdminPage = async () => {
     } | null,
   );
 
+  // Fetch data
   const stuff = await prisma.stuff.findMany({});
   const users = await prisma.user.findMany({});
-
   const adminCount = users.filter((user) => user.role === 'ADMIN').length;
 
-  // Pending submissions for Image Moderation
+  // Pending submissions
   const pendingSubmissions = await prisma.submission.findMany({
     where: { status: 'PENDING' },
     orderBy: { createdAt: 'desc' },
   });
 
-  // Reported images (reportCount > 0)
+  // Reported submissions
   const reportedSubmissions = await prisma.submission.findMany({
-    where: {
-      reportCount: {
-        gt: 0,
-      },
-    },
-    orderBy: [
-      { reportCount: 'desc' },
-      { createdAt: 'desc' },
-    ],
+    where: { reportCount: { gt: 0 } },
+    orderBy: [{ reportCount: 'desc' }, { createdAt: 'desc' }],
   });
 
   return (
     <main className="min-vh-100 py-4">
       <Container id="list" fluid className="py-3">
-        {/* Page header */}
+        {/* Page Header */}
         <Row className="mb-4">
           <Col>
             <h1 className="display-4 fw-bold hero-title">Admin Dashboard</h1>
           </Col>
         </Row>
 
-        {/* Quick stats row */}
+        {/* Quick Stats */}
         <Row className="mb-4">
           <Col md={4} className="mb-3 mb-md-0">
             <Card className="shadow-sm rounded-4 p-3">
@@ -56,12 +49,14 @@ const AdminPage = async () => {
               <h3 className="mb-0">{stuff.length}</h3>
             </Card>
           </Col>
+
           <Col md={4} className="mb-3 mb-md-0">
             <Card className="shadow-sm rounded-4 p-3">
               <h6 className="text-muted text-uppercase mb-1">Total Users</h6>
               <h3 className="mb-0">{users.length}</h3>
             </Card>
           </Col>
+
           <Col md={4}>
             <Card className="shadow-sm rounded-4 p-3">
               <h6 className="text-muted text-uppercase mb-1">Admins</h6>
@@ -70,23 +65,23 @@ const AdminPage = async () => {
           </Col>
         </Row>
 
-        {/* SECTION 1: Users – Players & Scores */}
+        {/* Section 1: User List */}
         <Row className="mb-5">
           <Col>
             <Card className="shadow-sm rounded-4 admin-card p-4">
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h2 className="fw-bold mb-1 hero-subtitle">Players Information</h2>
-                  <p className="text-muted mb-0">
-                    View all users along with their usernames, roles, and current scores.
-                  </p>
+                  <p className="text-muted mb-0">View all users along with their usernames, roles, and scores.</p>
                 </div>
+
                 <Badge bg="success" pill>
                   {users.length}
-                  &nbsp;players
+                  players
                 </Badge>
               </div>
-              <Table striped bordered hover responsive className="mb-0">
+
+              <Table striped bordered hover responsive>
                 <thead>
                   <tr>
                     <th>Email</th>
@@ -96,6 +91,7 @@ const AdminPage = async () => {
                     <th>Actions</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {users.map((user) => (
                     <tr key={user.id}>
@@ -118,7 +114,7 @@ const AdminPage = async () => {
           </Col>
         </Row>
 
-        {/* SECTION 2: Image Moderation (pending images only) */}
+        {/* Section 2: Pending Moderation */}
         <ImageModerationSection
           initialSubmissions={pendingSubmissions.map((s) => ({
             id: s.id,
@@ -130,40 +126,36 @@ const AdminPage = async () => {
           }))}
         />
 
-        {/* SECTION 3: Reported Images */}
+        {/* Section 3: Reported Images */}
         <Row className="mb-5">
           <Col>
             <Card className="shadow-sm rounded-4 admin-card p-4">
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h2 className="fw-bold mb-1 hero-subtitle">Reported Images</h2>
-                  <p className="text-muted mb-0">
-                    Images that have been reported by players. Use this section to review
-                    frequently reported content.
-                  </p>
+                  <p className="text-muted mb-0">Images flagged by players.</p>
                 </div>
+
                 <Badge bg={reportedSubmissions.length > 0 ? 'danger' : 'secondary'} pill>
                   {reportedSubmissions.length}
-                  &nbsp;reported
+                  reported
                 </Badge>
               </div>
 
               {reportedSubmissions.length === 0 ? (
-                <p className="text-center text-muted py-4 mb-0">
-                  There are currently no reported images.
-                </p>
+                <p className="text-center text-muted py-4 mb-0">No reported images.</p>
               ) : (
-                <Table striped bordered hover responsive className="mb-0">
+                <Table striped bordered hover responsive>
                   <thead>
                     <tr>
                       <th>Preview</th>
-                      <th>Title / ID</th>
+                      <th>Caption / ID</th>
                       <th>Submitted By</th>
-                      <th>Status</th>
-                      <th>Uploaded</th>
+                      <th>Reported By</th>
                       <th>Reports</th>
                     </tr>
                   </thead>
+
                   <tbody>
                     {reportedSubmissions.map((s) => (
                       <tr key={s.id}>
@@ -180,18 +172,19 @@ const AdminPage = async () => {
                             }}
                           />
                         </td>
+
                         <td>
-                          <div className="fw-semibold">
-                            {s.caption || `Submission #${s.id}`}
-                          </div>
+                          <div className="fw-semibold">{s.caption || `Submission #${s.id}`}</div>
                           <div className="text-muted small">
                             ID:
                             {s.id}
                           </div>
                         </td>
-                        <td>{s.submittedBy || 'Unknown'}</td>
-                        <td>{s.status}</td>
-                        <td>{s.createdAt.toLocaleString()}</td>
+
+                        <td>{s.submittedBy}</td>
+
+                        <td>{Array.isArray(s.reporters) && s.reporters.length > 0 ? s.reporters.join(', ') : '—'}</td>
+
                         <td>{s.reportCount}</td>
                       </tr>
                     ))}
