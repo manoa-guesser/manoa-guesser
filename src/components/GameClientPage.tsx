@@ -124,7 +124,6 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
     return () => clearInterval(interval);
   }, [isGameStarted, isGameOver, handleTimeUp]);
 
-
   const startGame = () => {
     setIsGameStarted(true);
     setIsGameOver(false);
