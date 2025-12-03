@@ -1,4 +1,4 @@
-import { PrismaClient, Role, Condition } from '@prisma/client';
+import { PrismaClient, Role, SubmissionStatus } from '@prisma/client';
 import { hash } from 'bcrypt';
 import * as config from '../config/settings.development.json';
 
@@ -35,20 +35,20 @@ async function main() {
   }
 
   // -------------------------------
-  // Seed Stuff
+  // Seed Submissions (defaultLocations)
   // -------------------------------
-  for (const data of config.defaultData) {
-    const condition = (data.condition as Condition) || Condition.good;
-    console.log(`  Adding stuff: ${JSON.stringify(data)}`);
+  for (const loc of config.defaultLocations) {
+    console.log(`  Adding submission: ${JSON.stringify(loc)}`);
+
     // eslint-disable-next-line no-await-in-loop
-    await prisma.stuff.upsert({
-      where: { id: config.defaultData.indexOf(data) + 1 },
-      update: {},
-      create: {
-        name: data.name,
-        quantity: data.quantity,
-        owner: data.owner,
-        condition,
+    await prisma.submission.create({
+      data: {
+        imageUrl: loc.imageUrl,
+        caption: loc.caption,
+        location: loc.location,
+        submittedBy: loc.submittedBy,
+        status: loc.status ? (loc.status as SubmissionStatus) : undefined,
+        reportCount: loc.reportCount,
       },
     });
   }
