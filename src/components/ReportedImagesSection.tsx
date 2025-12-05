@@ -32,7 +32,7 @@ const ReportedImagesSection: React.FC<Props> = ({ initialSubmissions }) => {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/submissions/${id}`, {
+      const res = await fetch(`/api/admin/submissions/${id}`, {
         method: 'DELETE',
       });
 
@@ -51,7 +51,7 @@ const ReportedImagesSection: React.FC<Props> = ({ initialSubmissions }) => {
 
   const handleClearReports = async (id: number) => {
     try {
-      const res = await fetch(`/api/submissions/${id}`, {
+      const res = await fetch(`/api/admin/submissions/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'clearReports' }),
