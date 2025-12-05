@@ -2,15 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import {
-  Button,
-  Card,
-  Col,
-  Container,
-  Form,
-  Row,
-  ProgressBar,
-} from 'react-bootstrap';
+import { Button, Card, Col, Container, Form, Row, ProgressBar } from 'react-bootstrap';
 import swal from 'sweetalert';
 import dynamic from 'next/dynamic';
 import { Submission } from '@prisma/client';
@@ -26,20 +18,14 @@ interface GameClientPageProps {
   submissions: Submission[];
 }
 
-function getDistanceMeters(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-) {
+function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371e3;
   const φ1 = (lat1 * Math.PI) / 180;
   const φ2 = (lat2 * Math.PI) / 180;
   const Δφ = ((lat2 - lat1) * Math.PI) / 180;
   const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-  const a = Math.sin(Δφ / 2) ** 2
-    + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
@@ -72,9 +58,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const [selectedLatLng, setSelectedLatLng] = useState<[number, number] | null>(
-    null,
-  );
+  const [selectedLatLng, setSelectedLatLng] = useState<[number, number] | null>(null);
 
   const [streak, setStreak] = useState(0);
   const [streakBonus, setStreakBonus] = useState(0);
@@ -84,12 +68,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
   const endGame = useCallback(
     (finalScore: number) => {
       setIsGameOver(true);
-      swal(
-        'Game Over!',
-        `Your final score:\n ${finalScore} / ${questions.length * 100}`,
-        'info',
-        { timer: 5000 },
-      );
+      swal('Game Over!', `Your final score:\n ${finalScore} / ${questions.length * 100}`, 'info', { timer: 5000 });
     },
     [questions.length],
   );
@@ -145,12 +124,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
 
     const [guessLat, guessLng] = selectedLatLng;
 
-    const distance = getDistanceMeters(
-      guessLat,
-      guessLng,
-      currentQuestion.lat,
-      currentQuestion.lng,
-    );
+    const distance = getDistanceMeters(guessLat, guessLng, currentQuestion.lat, currentQuestion.lng);
 
     const roundScore = scoreFromDistance(distance);
 
@@ -175,9 +149,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
 
     swal({
       title: `Distance:\n ${distance.toFixed(1)} meters`,
-      text: `You earned ${roundScore} points${
-        bonus ? ` + ${bonus} streak bonus` : ''
-      }`,
+      text: `You earned ${roundScore} points${bonus ? ` + ${bonus} streak bonus` : ''}`,
       icon: roundScore > 0 ? 'success' : 'error',
       timer: 5000,
     });
@@ -198,9 +170,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
         <Col xs={6}>
           <Card>
             <Card.Body>
-              <Card.Title className="text-center mb-3 hero-title">
-                Manoa Guesser
-              </Card.Title>
+              <Card.Title className="text-center mb-3 hero-title">Manoa Guesser</Card.Title>
 
               {!isGameStarted || isGameOver ? (
                 <div className="text-center">
@@ -237,10 +207,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                         borderRadius: '999px',
                         fontWeight: 'bold',
                         border: '1px solid #ccc',
-                        boxShadow:
-                          streak >= 3
-                            ? '0 0 8px rgba(255,140,0,0.6)'
-                            : undefined,
+                        boxShadow: streak >= 3 ? '0 0 8px rgba(255,140,0,0.6)' : undefined,
                       }}
                     >
                       <span>🔥 Streak: </span>
@@ -291,6 +258,42 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                       className="rounded"
                       style={{ objectFit: 'cover' }}
                     />
+
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      className="mt-2"
+                      onClick={async () => {
+                        const confirmed = await swal({
+                          title: 'Report Image?',
+                          text: 'Flag this image as incorrect or inappropriate?',
+                          icon: 'warning',
+                          buttons: ['Cancel', 'Report'],
+                          dangerMode: true,
+                        });
+
+                        if (!confirmed) return;
+
+                        try {
+                          const res = await fetch('/api/reports', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              submissionId: currentQuestion.id,
+                            }),
+                          });
+
+                          if (!res.ok) throw new Error('Failed');
+
+                          swal('Reported!', 'Thank you — our admins will review this image.', 'success');
+                        } catch (err) {
+                          console.error(err);
+                          swal('Error', 'Unable to submit report.', 'error');
+                        }
+                      }}
+                    >
+                      Report Image
+                    </Button>
                   </div>
 
                   <LeafletMap
