@@ -262,7 +262,7 @@ body {
 }
 
 /* Green submit button */
-.swal-btn-submit {
+.green_btn {
   background-color: var(--uh-green) !important;
   color: white !important;
 }
