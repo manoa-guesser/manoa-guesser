@@ -14,7 +14,7 @@ const SignIn = () => {
     const email = target.email.value;
     const password = target.password.value;
     const result = await signIn('credentials', {
-      callbackUrl: '/game',
+      callbackUrl: '/',
       email,
       password,
     });
@@ -26,7 +26,7 @@ const SignIn = () => {
 
   return (
     <main>
-      <Container>
+      <Container className="min-vh-100">
         <Row className="justify-content-center">
           <Col xs={5}>
             <h1 className="text-center fw-bold mb-3 hero-title display-3">Welcome back!</h1>

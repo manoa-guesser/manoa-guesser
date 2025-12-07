@@ -32,7 +32,7 @@ const AdminPage = async () => {
   });
 
   return (
-    <main className="min-vh-100 py-4">
+    <main className="py-4">
       <Container id="list" fluid className="py-3">
         {/* Page header */}
         <Row className="mb-4">
