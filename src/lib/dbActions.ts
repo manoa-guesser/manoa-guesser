@@ -18,12 +18,7 @@ export type SubmissionFormData = {
  * Adds a new stuff to the database.
  * @param stuff, an object with the following properties: name, quantity, owner, condition.
  */
-export async function addStuff(stuff: {
-  name: string;
-  quantity: number;
-  owner: string;
-  condition: string;
-}) {
+export async function addStuff(stuff: { name: string; quantity: number; owner: string; condition: string }) {
   // console.log(`addStuff data: ${JSON.stringify(stuff, null, 2)}`);
   let condition: Condition = 'good';
 
@@ -96,15 +91,16 @@ export async function deleteStuff(id: number) {
 
 /**
  * Creates a new user in the database.
- * @param credentials, an object with the following properties: email, password.
+ * @param credentials, an object with the following properties: email, password, username.
  */
-export async function createUser(credentials: { email: string; password: string }) {
+export async function createUser(credentials: { email: string; password: string; username: string }) {
   // console.log(`createUser data: ${JSON.stringify(credentials, null, 2)}`);
   const password = await hash(credentials.password, 10);
   await prisma.user.create({
     data: {
       email: credentials.email,
       password,
+      username: credentials.username,
       // role and score use defaults from the Prisma schema
     },
   });
