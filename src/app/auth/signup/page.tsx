@@ -14,6 +14,7 @@ type SignUpForm = {
   confirmPassword: string;
 };
 
+/** The sign up page. */
 const SignUp = () => {
   const validationSchema = Yup.object().shape({
     username: Yup.string()
@@ -34,25 +35,48 @@ const SignUp = () => {
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { errors },
   } = useForm<SignUpForm>({
     resolver: yupResolver(validationSchema),
   });
 
   const onSubmit = async (data: SignUpForm) => {
-    // Create user in DB (now including username)
-    await createUser({
-      email: data.email,
-      password: data.password,
-      username: data.username,
-    });
+    try {
+      // Create user in DB (now including username)
+      await createUser({
+        email: data.email,
+        password: data.password,
+        username: data.username,
+      });
 
-    // Then sign them in with just the credentials provider fields
-    await signIn('credentials', {
-      callbackUrl: '/add',
-      email: data.email,
-      password: data.password,
-    });
+      // Then sign them in with just the credentials provider fields
+      await signIn('credentials', {
+        callbackUrl: '/add',
+        email: data.email,
+        password: data.password,
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err.message === 'USERNAME_TAKEN') {
+          setError('username', {
+            type: 'manual',
+            message: 'This username is already taken.',
+          });
+          return;
+        }
+        if (err.message === 'EMAIL_TAKEN') {
+          setError('email', {
+            type: 'manual',
+            message: 'This email is already in use.',
+          });
+          return;
+        }
+      }
+
+      console.error('Sign up error:', err);
+      // optionally show a toast/swal here
+    }
   };
 
   return (

@@ -1,6 +1,6 @@
 'use server';
 
-import { Stuff, Condition } from '@prisma/client';
+import { Stuff, Condition, Prisma } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
@@ -96,14 +96,37 @@ export async function deleteStuff(id: number) {
 export async function createUser(credentials: { email: string; password: string; username: string }) {
   // console.log(`createUser data: ${JSON.stringify(credentials, null, 2)}`);
   const password = await hash(credentials.password, 10);
-  await prisma.user.create({
-    data: {
-      email: credentials.email,
-      password,
-      username: credentials.username,
-      // role and score use defaults from the Prisma schema
-    },
-  });
+
+  try {
+    await prisma.user.create({
+      data: {
+        email: credentials.email,
+        password,
+        username: credentials.username,
+        // role and score use defaults from the Prisma schema
+      },
+    });
+  } catch (err: unknown) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      const target = err.meta?.target as string[] | string | undefined;
+
+      const includesField = (field: string) => {
+        if (!target) return false;
+        if (Array.isArray(target)) return target.includes(field);
+        return target === field;
+      };
+
+      if (includesField('username')) {
+        throw new Error('USERNAME_TAKEN');
+      }
+      if (includesField('email')) {
+        throw new Error('EMAIL_TAKEN');
+      }
+    }
+
+    // Re-throw anything else
+    throw err;
+  }
 }
 
 /**
