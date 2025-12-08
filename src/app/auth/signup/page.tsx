@@ -43,39 +43,30 @@ const SignUp = () => {
 
   const onSubmit = async (data: SignUpForm) => {
     try {
-      // Create user in DB (now including username)
-      await createUser({
+      const result = await createUser({
         email: data.email,
         password: data.password,
         username: data.username,
       });
 
-      // Then sign them in with just the credentials provider fields
+      if (!result.ok) {
+        // Inline error under the correct field
+        setError(result.field, {
+          type: 'manual',
+          message: result.message,
+        });
+        return;
+      }
+
+      // Only sign in if user creation succeeded
       await signIn('credentials', {
         callbackUrl: '/add',
         email: data.email,
         password: data.password,
       });
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        if (err.message === 'USERNAME_TAKEN') {
-          setError('username', {
-            type: 'manual',
-            message: 'This username is already taken.',
-          });
-          return;
-        }
-        if (err.message === 'EMAIL_TAKEN') {
-          setError('email', {
-            type: 'manual',
-            message: 'This email is already in use.',
-          });
-          return;
-        }
-      }
-
+    } catch (err) {
+      // Only truly unexpected errors reach here now
       console.error('Sign up error:', err);
-      // optionally show a toast/swal here
     }
   };
 
