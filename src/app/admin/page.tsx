@@ -16,10 +16,10 @@ const AdminPage = async () => {
     } | null,
   );
 
-  const stuff = await prisma.stuff.findMany({});
   const users = await prisma.user.findMany({});
   const adminCount = users.filter((user) => user.role === 'ADMIN').length;
-
+  const totalSubmissions = await prisma.submission.count();
+  
   // Pending submissions
   const pendingSubmissions = await prisma.submission.findMany({
     where: { status: 'PENDING' },
@@ -52,8 +52,8 @@ const AdminPage = async () => {
         <Row className="mb-4">
           <Col md={4} className="mb-3 mb-md-0">
             <Card className="shadow-sm rounded-4 p-3">
-              <h6 className="text-muted text-uppercase mb-1">Total Items</h6>
-              <h3 className="mb-0">{stuff.length}</h3>
+              <h6 className="text-muted text-uppercase mb-1">Total Submissions</h6>
+              <h3 className="mb-0">{totalSubmissions}</h3>
             </Card>
           </Col>
           <Col md={4} className="mb-3 mb-md-0">
