@@ -29,7 +29,7 @@ export default function LeafletMap({ onSelectLocation }: LeafletMapProps) {
   };
 
   return (
-    <div style={{ height: '300px', width: '100%' }}>
+    <div style={{ height: '350px', width: '100%' }}>
       <MapContainer center={position} zoom={16} style={{ height: '100%', width: '100%' }}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 

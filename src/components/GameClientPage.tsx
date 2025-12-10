@@ -22,7 +22,6 @@ function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: numbe
   const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
   const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
-
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -59,6 +58,7 @@ const GamePage = () => {
   const [isGameOver, setIsGameOver] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [selectedLatLng, setSelectedLatLng] = useState<[number, number] | null>(null);
+  const [layout, setLayout] = useState<'vertical' | 'horizontal'>('vertical');
 
   const [streak, setStreak] = useState(0);
   const [streakBonus, setStreakBonus] = useState(0);
@@ -72,63 +72,6 @@ const GamePage = () => {
     },
     [questions.length],
   );
-
-  const handleTimeUp = useCallback(() => {
-    setStreak(0);
-    setStreakBonus(0);
-
-    if (currentQuestionIndex + 1 < questions.length) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-      setTimer(GAME_TIME);
-      setShowHint(false);
-    } else {
-      endGame(score);
-    }
-  }, [currentQuestionIndex, score, endGame, questions.length]);
-
-  useEffect(() => {
-    if (!isGameStarted || isGameOver) return;
-
-    const interval = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          handleTimeUp();
-          return GAME_TIME;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isGameStarted, isGameOver, handleTimeUp]);
-
-  const startGame = async () => {
-    try {
-      const res = await fetch('/api/game');
-      const data = await res.json();
-
-      if (!res.ok) {
-        swal('Error', data.error || 'Could not start new game', 'error');
-        return;
-      }
-
-      setQuestions(formatSubmissions(data));
-
-      setIsGameStarted(true);
-      setIsGameOver(false);
-      setCurrentQuestionIndex(0);
-      setScore(0);
-      setTimer(GAME_TIME);
-      setStreak(0);
-      setStreakBonus(0);
-      setSelectedLatLng(null);
-      setShowHint(false);
-    } catch (err) {
-      console.error(err);
-      swal('Error', 'Failed to load a new game.', 'error');
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,6 +122,69 @@ const GamePage = () => {
     }
   };
 
+  const handleTimeUp = useCallback(() => {
+    setStreak(0);
+    setStreakBonus(0);
+
+    if (selectedLatLng) {
+      // Auto-submit if user placed a pin
+      handleSubmit(new Event('submit') as unknown as React.FormEvent);
+      return;
+    }
+
+    if (currentQuestionIndex + 1 < questions.length) {
+      setCurrentQuestionIndex((prev) => prev + 1);
+      setTimer(GAME_TIME);
+      setShowHint(false);
+    } else {
+      endGame(score);
+    }
+  }, [currentQuestionIndex, score, endGame, questions.length, selectedLatLng]);
+
+  useEffect(() => {
+    if (!isGameStarted || isGameOver) return;
+
+    const interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleTimeUp();
+          return GAME_TIME;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isGameStarted, isGameOver, handleTimeUp]);
+
+  const startGame = async () => {
+    try {
+      const res = await fetch('/api/game');
+      const data = await res.json();
+
+      if (!res.ok) {
+        swal('Error', data.error || 'Could not start new game', 'error');
+        return;
+      }
+
+      setQuestions(formatSubmissions(data));
+
+      setIsGameStarted(true);
+      setIsGameOver(false);
+      setCurrentQuestionIndex(0);
+      setScore(0);
+      setTimer(GAME_TIME);
+      setStreak(0);
+      setStreakBonus(0);
+      setSelectedLatLng(null);
+      setShowHint(false);
+    } catch (err) {
+      console.error(err);
+      swal('Error', 'Failed to load a new game.', 'error');
+    }
+  };
+
   if (isGameStarted && questions.length === 0) {
     return <div className="text-center mt-5" style={{ color: 'white' }}>Loading game...</div>;
   }
@@ -186,10 +192,20 @@ const GamePage = () => {
   return (
     <Container className="py-4">
       <Row className="justify-content-center">
-        <Col xs={6}>
+        <Col xs={12} md={layout === 'horizontal' ? 12 : 6}>
           <Card>
             <Card.Body>
-              <Card.Title className="text-center mb-3 hero-title">Manoa Guesser</Card.Title>
+              <Card.Title
+                className="text-center mb-4 hero-title"
+                style={{
+                  fontSize: '2.2rem',
+                  fontWeight: '700',
+                  lineHeight: '1.5',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                Manoa Guesser
+              </Card.Title>
 
               {!isGameStarted || isGameOver ? (
                 <div className="text-center">
@@ -209,16 +225,14 @@ const GamePage = () => {
                     <div className="mt-3">
                       <div>Your last score:</div>
                       <strong>
-                        {score}
-                        /
-                        {questions.length * 100}
+                        {score}/{questions.length * 100}
                       </strong>
                     </div>
                   )}
                 </div>
               ) : (
                 <>
-                  <div className="d-flex justify-content-center mb-2">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
                     <div
                       style={{
                         backgroundColor: streak ? '#ffe08a' : '#eee',
@@ -231,15 +245,18 @@ const GamePage = () => {
                     >
                       <span>🔥 Streak: </span>
                       <span>{streak}</span>
-                      {streak >= 2
-                      && (
-                      <span style={{ marginLeft: 8, color: '#d35400' }}>
-                        (
-                          {streakBonus}
-                        )
-                      </span>
+                      {streak >= 2 && (
+                        <span style={{ marginLeft: 8, color: '#d35400' }}>({streakBonus})</span>
                       )}
                     </div>
+
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setLayout(layout === 'vertical' ? 'horizontal' : 'vertical')}
+                    >
+                      {layout === 'vertical' ? 'Switch to Horizontal' : 'Switch to Vertical'}
+                    </Button>
                   </div>
 
                   <div className="d-flex justify-content-end mb-2">
@@ -253,9 +270,7 @@ const GamePage = () => {
                         padding: 0,
                         border: '1px solid #ccc',
                       }}
-                      onClick={() => {
-                        setShowHint((prev) => !prev);
-                      }}
+                      onClick={() => setShowHint((prev) => !prev)}
                     >
                       ?
                     </Button>
@@ -269,61 +284,41 @@ const GamePage = () => {
                     </div>
                   )}
 
-                  <div className="text-center mb-3">
-                    <Image
-                      src={currentQuestion.imageUrl}
-                      alt="Campus location"
-                      width={500}
-                      height={350}
-                      className="rounded"
-                      style={{ objectFit: 'cover' }}
-                    />
-
-                    <div style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}>
-                      Submitted by:
-                      <strong>
-                        {currentQuestion.submittedBy}
-                      </strong>
+                  {layout === 'vertical' ? (
+                    <div className="text-center mb-3">
+                      <Image
+                        src={currentQuestion.imageUrl}
+                        alt="Campus location"
+                        width={500}
+                        height={350}
+                        className="rounded"
+                        style={{ objectFit: 'cover' }}
+                      />
+                      <div style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}>
+                        Submitted by: <strong>{currentQuestion.submittedBy}</strong>
+                      </div>
+                      <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
                     </div>
-
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      className="mt-2"
-                      onClick={async () => {
-                        const confirmed = await swal({
-                          title: 'Report Image?',
-                          text: 'Flag this image as incorrect or inappropriate?',
-                          icon: 'warning',
-                          buttons: ['Cancel', 'Report'],
-                          dangerMode: true,
-                        });
-
-                        if (!confirmed) return;
-
-                        try {
-                          const res = await fetch('/api/reports', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              submissionId: currentQuestion.id,
-                            }),
-                          });
-
-                          if (!res.ok) throw new Error('Failed');
-
-                          swal('Reported!', 'Thank you — our admins will review this image.', 'success');
-                        } catch (err) {
-                          console.error(err);
-                          swal('Error', 'Unable to submit report.', 'error');
-                        }
-                      }}
-                    >
-                      Report Image
-                    </Button>
-                  </div>
-
-                  <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
+                  ) : (
+                    <Row className="mb-3">
+                      <Col md={6}>
+                        <Image
+                          src={currentQuestion.imageUrl}
+                          alt="Campus location"
+                          width={500}
+                          height={350}
+                          className="rounded"
+                          style={{ objectFit: 'cover', width: '100%' }}
+                        />
+                        <div style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}>
+                          Submitted by: <strong>{currentQuestion.submittedBy}</strong>
+                        </div>
+                      </Col>
+                      <Col md={6}>
+                        <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
+                      </Col>
+                    </Row>
+                  )}
 
                   <ProgressBar
                     now={(timer / GAME_TIME) * 100}
@@ -343,10 +338,7 @@ const GamePage = () => {
                     <Button
                       type="submit"
                       className="w-100 mb-2"
-                      style={{
-                        backgroundColor: '#1e6f43',
-                        borderColor: '#1e6f43',
-                      }}
+                      style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}
                     >
                       Submit
                     </Button>
