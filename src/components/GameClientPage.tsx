@@ -9,19 +9,24 @@ import { Submission } from '@prisma/client';
 
 const GAME_TIME = 20;
 const STREAK_BONUS_POINTS = 25;
+const COUNTDOWN_START = 3;
 
-const LeafletMap = dynamic(() => import('@/components/GameMap'), {
-  ssr: false,
-});
+const LeafletMap = dynamic(() => import('@/components/GameMap'), { ssr: false });
 
-function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+function getDistanceMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) {
   const R = 6371e3;
   const φ1 = (lat1 * Math.PI) / 180;
   const φ2 = (lat2 * Math.PI) / 180;
   const Δφ = ((lat2 - lat1) * Math.PI) / 180;
   const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  const a = Math.sin(Δφ / 2) ** 2
+  + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
@@ -53,12 +58,15 @@ function formatSubmissions(subs: Submission[]) {
 const GamePage = () => {
   const [questions, setQuestions] = useState<any[]>([]);
   const [isGameStarted, setIsGameStarted] = useState(false);
+  const [isCountdownActive, setIsCountdownActive] = useState(false);
+  const [countdown, setCountdown] = useState(COUNTDOWN_START);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timer, setTimer] = useState(GAME_TIME);
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [selectedLatLng, setSelectedLatLng] = useState<[number, number] | null>(null);
+  const [layout, setLayout] = useState<'vertical' | 'horizontal'>('vertical');
 
   const [streak, setStreak] = useState(0);
   const [streakBonus, setStreakBonus] = useState(0);
@@ -68,14 +76,81 @@ const GamePage = () => {
   const endGame = useCallback(
     (finalScore: number) => {
       setIsGameOver(true);
-      swal('Game Over!', `Your final score:\n ${finalScore} / ${questions.length * 100}`, 'info', { timer: 5000 });
+      swal(
+        'Game Over!',
+        `Your final score:\n ${finalScore} / ${questions.length * 100}`,
+        'info',
+        { timer: 5000 },
+      );
     },
     [questions.length],
+  );
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+
+      if (!selectedLatLng) {
+        swal('No guess', 'Please drop a pin on the map!', 'warning');
+        return;
+      }
+
+      const [guessLat, guessLng] = selectedLatLng;
+      const distance = getDistanceMeters(
+        guessLat,
+        guessLng,
+        currentQuestion.lat,
+        currentQuestion.lng,
+      );
+
+      const roundScore = scoreFromDistance(distance);
+
+      let bonus = 0;
+      let newStreak = streak;
+
+      if (roundScore > 0) {
+        newStreak = streak + 1;
+        bonus = newStreak >= 2 ? (newStreak - 1) * STREAK_BONUS_POINTS : 0;
+        setStreak(newStreak);
+        setStreakBonus(bonus);
+      } else {
+        setStreak(0);
+        setStreakBonus(0);
+      }
+
+      const totalRoundScore = roundScore + bonus;
+      const newScore = score + totalRoundScore;
+      setScore(newScore);
+
+      swal({
+        title: `Distance:\n ${distance.toFixed(1)} meters`,
+        text: `You earned ${roundScore} points${
+          bonus ? ` + ${bonus} streak bonus` : ''
+        }`,
+        icon: roundScore > 0 ? 'success' : 'error',
+        timer: 5000,
+      });
+
+      if (currentQuestionIndex + 1 < questions.length) {
+        setCurrentQuestionIndex((prev) => prev + 1);
+        setSelectedLatLng(null);
+        setTimer(GAME_TIME);
+        setShowHint(false);
+      } else {
+        endGame(newScore);
+      }
+    },
+    [selectedLatLng, currentQuestion, streak, score, currentQuestionIndex, questions.length, endGame],
   );
 
   const handleTimeUp = useCallback(() => {
     setStreak(0);
     setStreakBonus(0);
+
+    if (selectedLatLng) {
+      handleSubmit(new Event('submit') as unknown as React.FormEvent);
+      return;
+    }
 
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
@@ -84,10 +159,10 @@ const GamePage = () => {
     } else {
       endGame(score);
     }
-  }, [currentQuestionIndex, score, endGame, questions.length]);
+  }, [currentQuestionIndex, score, endGame, questions.length, selectedLatLng, handleSubmit]);
 
   useEffect(() => {
-    if (!isGameStarted || isGameOver) return;
+    if (!isGameStarted || isGameOver || isCountdownActive) return;
 
     const interval = setInterval(() => {
       setTimer((prev) => {
@@ -101,7 +176,7 @@ const GamePage = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isGameStarted, isGameOver, handleTimeUp]);
+  }, [isGameStarted, isGameOver, handleTimeUp, isCountdownActive]);
 
   const startGame = async () => {
     try {
@@ -114,8 +189,8 @@ const GamePage = () => {
       }
 
       setQuestions(formatSubmissions(data));
-
-      setIsGameStarted(true);
+      setIsCountdownActive(true);
+      setCountdown(COUNTDOWN_START);
       setIsGameOver(false);
       setCurrentQuestionIndex(0);
       setScore(0);
@@ -130,66 +205,54 @@ const GamePage = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!selectedLatLng) {
-      swal('No guess', 'Please drop a pin on the map!', 'warning');
+  useEffect(() => {
+    if (!isCountdownActive) return;
+    if (countdown <= 0) {
+      setIsCountdownActive(false);
+      setIsGameStarted(true);
       return;
     }
 
-    const [guessLat, guessLng] = selectedLatLng;
+    const timerId = setTimeout(() => setCountdown(countdown - 1), 1000);
+    return () => clearTimeout(timerId);
+  }, [countdown, isCountdownActive]);
 
-    const distance = getDistanceMeters(guessLat, guessLng, currentQuestion.lat, currentQuestion.lng);
-    const roundScore = scoreFromDistance(distance);
-
-    let bonus = 0;
-    let newStreak = streak;
-
-    if (roundScore > 0) {
-      newStreak = streak + 1;
-      bonus = newStreak >= 2 ? (newStreak - 1) * STREAK_BONUS_POINTS : 0;
-
-      setStreak(newStreak);
-      setStreakBonus(bonus);
-    } else {
-      setStreak(0);
-      setStreakBonus(0);
-    }
-
-    const totalRoundScore = roundScore + bonus;
-    const newScore = score + totalRoundScore;
-
-    setScore(newScore);
-
-    swal({
-      title: `Distance:\n ${distance.toFixed(1)} meters`,
-      text: `You earned ${roundScore} points${bonus ? ` + ${bonus} streak bonus` : ''}`,
-      icon: roundScore > 0 ? 'success' : 'error',
-      timer: 5000,
-    });
-
-    if (currentQuestionIndex + 1 < questions.length) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-      setSelectedLatLng(null);
-      setTimer(GAME_TIME);
-      setShowHint(false);
-    } else {
-      endGame(newScore);
-    }
-  };
+  if (isCountdownActive) {
+    return (
+      <Container
+        className="text-center py-5"
+        style={{ color: 'white', fontSize: '3rem' }}
+      >
+        {countdown === 0 ? 'Go!' : `Ready… ${countdown}`}
+      </Container>
+    );
+  }
 
   if (isGameStarted && questions.length === 0) {
-    return <div className="text-center mt-5" style={{ color: 'white' }}>Loading game...</div>;
+    return (
+      <div className="text-center mt-5" style={{ color: 'white' }}>
+        Loading game...
+      </div>
+    );
   }
 
   return (
     <Container className="py-4">
       <Row className="justify-content-center">
-        <Col xs={6}>
+        <Col xs={12} md={layout === 'horizontal' ? 12 : 6}>
           <Card>
             <Card.Body>
-              <Card.Title className="text-center mb-3 hero-title">Manoa Guesser</Card.Title>
+              <Card.Title
+                className="text-center mb-4 hero-title"
+                style={{
+                  fontSize: '2.2rem',
+                  fontWeight: '700',
+                  lineHeight: '1.5',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                Manoa Guesser
+              </Card.Title>
 
               {!isGameStarted || isGameOver ? (
                 <div className="text-center">
@@ -197,10 +260,7 @@ const GamePage = () => {
                     variant="primary"
                     size="lg"
                     onClick={startGame}
-                    style={{
-                      backgroundColor: '#1e6f43',
-                      borderColor: '#1e6f43',
-                    }}
+                    style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}
                   >
                     Start Game
                   </Button>
@@ -210,7 +270,9 @@ const GamePage = () => {
                       <div>Your last score:</div>
                       <strong>
                         {score}
-                        /
+                      </strong>
+                      <span> / </span>
+                      <strong>
                         {questions.length * 100}
                       </strong>
                     </div>
@@ -218,7 +280,7 @@ const GamePage = () => {
                 </div>
               ) : (
                 <>
-                  <div className="d-flex justify-content-center mb-2">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
                     <div
                       style={{
                         backgroundColor: streak ? '#ffe08a' : '#eee',
@@ -231,15 +293,28 @@ const GamePage = () => {
                     >
                       <span>🔥 Streak: </span>
                       <span>{streak}</span>
-                      {streak >= 2
-                      && (
-                      <span style={{ marginLeft: 8, color: '#d35400' }}>
-                        (
-                          {streakBonus}
-                        )
-                      </span>
+                      {streak >= 2 && (
+                        <>
+                          <span style={{ marginLeft: 8, color: '#d35400' }}>
+                            (
+                          </span>
+                          <span>
+                            {streakBonus}
+                          </span>
+                          <span>
+                            )
+                          </span>
+                        </>
                       )}
                     </div>
+
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setLayout(layout === 'vertical' ? 'horizontal' : 'vertical')}
+                    >
+                      {layout === 'vertical' ? 'Switch to Horizontal' : 'Switch to Vertical'}
+                    </Button>
                   </div>
 
                   <div className="d-flex justify-content-end mb-2">
@@ -253,9 +328,7 @@ const GamePage = () => {
                         padding: 0,
                         border: '1px solid #ccc',
                       }}
-                      onClick={() => {
-                        setShowHint((prev) => !prev);
-                      }}
+                      onClick={() => setShowHint((prev) => !prev)}
                     >
                       ?
                     </Button>
@@ -269,61 +342,55 @@ const GamePage = () => {
                     </div>
                   )}
 
-                  <div className="text-center mb-3">
-                    <Image
-                      src={currentQuestion.imageUrl}
-                      alt="Campus location"
-                      width={500}
-                      height={350}
-                      className="rounded"
-                      style={{ objectFit: 'cover' }}
-                    />
-
-                    <div style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}>
-                      Submitted by:
-                      <strong>
-                        {currentQuestion.submittedBy}
-                      </strong>
+                  {layout === 'vertical' ? (
+                    <div className="text-center mb-3">
+                      <Image
+                        src={currentQuestion.imageUrl}
+                        alt="Campus location"
+                        width={500}
+                        height={350}
+                        className="rounded"
+                        style={{ objectFit: 'cover' }}
+                      />
+                      <div
+                        style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}
+                      >
+                        Submitted by:
+                        <strong>
+                          {currentQuestion.submittedBy}
+                        </strong>
+                      </div>
+                      <LeafletMap
+                        onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])}
+                      />
                     </div>
-
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      className="mt-2"
-                      onClick={async () => {
-                        const confirmed = await swal({
-                          title: 'Report Image?',
-                          text: 'Flag this image as incorrect or inappropriate?',
-                          icon: 'warning',
-                          buttons: ['Cancel', 'Report'],
-                          dangerMode: true,
-                        });
-
-                        if (!confirmed) return;
-
-                        try {
-                          const res = await fetch('/api/reports', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              submissionId: currentQuestion.id,
-                            }),
-                          });
-
-                          if (!res.ok) throw new Error('Failed');
-
-                          swal('Reported!', 'Thank you — our admins will review this image.', 'success');
-                        } catch (err) {
-                          console.error(err);
-                          swal('Error', 'Unable to submit report.', 'error');
-                        }
-                      }}
-                    >
-                      Report Image
-                    </Button>
-                  </div>
-
-                  <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
+                  ) : (
+                    <Row className="mb-3">
+                      <Col md={6}>
+                        <Image
+                          src={currentQuestion.imageUrl}
+                          alt="Campus location"
+                          width={500}
+                          height={350}
+                          className="rounded"
+                          style={{ objectFit: 'cover', width: '100%' }}
+                        />
+                        <div
+                          style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}
+                        >
+                          Submitted by:
+                          <strong>
+                            {currentQuestion.submittedBy}
+                          </strong>
+                        </div>
+                      </Col>
+                      <Col md={6}>
+                        <LeafletMap
+                          onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])}
+                        />
+                      </Col>
+                    </Row>
+                  )}
 
                   <ProgressBar
                     now={(timer / GAME_TIME) * 100}
@@ -343,10 +410,7 @@ const GamePage = () => {
                     <Button
                       type="submit"
                       className="w-100 mb-2"
-                      style={{
-                        backgroundColor: '#1e6f43',
-                        borderColor: '#1e6f43',
-                      }}
+                      style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}
                     >
                       Submit
                     </Button>
