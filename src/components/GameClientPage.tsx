@@ -14,10 +14,6 @@ const LeafletMap = dynamic(() => import('@/components/GameMap'), {
   ssr: false,
 });
 
-interface GameClientPageProps {
-  submissions: Submission[];
-}
-
 function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371e3;
   const φ1 = (lat1 * Math.PI) / 180;
@@ -39,8 +35,8 @@ function scoreFromDistance(distanceMeters: number): number {
   return 0;
 }
 
-const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
-  const questions = submissions.map((s) => {
+function formatSubmissions(subs: Submission[]) {
+  return subs.map((s) => {
     const [latStr, lngStr] = s.location.split(',').map((v) => v.trim());
     return {
       id: s.id,
@@ -51,7 +47,10 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
       lng: parseFloat(lngStr),
     };
   });
+}
 
+const GamePage = () => {
+  const [questions, setQuestions] = useState<any[]>([]);
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timer, setTimer] = useState(GAME_TIME);
@@ -103,15 +102,31 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
     return () => clearInterval(interval);
   }, [isGameStarted, isGameOver, handleTimeUp]);
 
-  const startGame = () => {
-    setIsGameStarted(true);
-    setIsGameOver(false);
-    setCurrentQuestionIndex(0);
-    setScore(0);
-    setTimer(GAME_TIME);
-    setStreak(0);
-    setStreakBonus(0);
-    setSelectedLatLng(null);
+  const startGame = async () => {
+    try {
+      const res = await fetch('/api/game');
+      const data = await res.json();
+
+      if (!res.ok) {
+        swal('Error', data.error || 'Could not start new game', 'error');
+        return;
+      }
+
+      setQuestions(formatSubmissions(data));
+
+      setIsGameStarted(true);
+      setIsGameOver(false);
+      setCurrentQuestionIndex(0);
+      setScore(0);
+      setTimer(GAME_TIME);
+      setStreak(0);
+      setStreakBonus(0);
+      setSelectedLatLng(null);
+      setShowHint(false);
+    } catch (err) {
+      console.error(err);
+      swal('Error', 'Failed to load a new game.', 'error');
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -125,7 +140,6 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
     const [guessLat, guessLng] = selectedLatLng;
 
     const distance = getDistanceMeters(guessLat, guessLng, currentQuestion.lat, currentQuestion.lng);
-
     const roundScore = scoreFromDistance(distance);
 
     let bonus = 0;
@@ -164,6 +178,10 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
     }
   };
 
+  if (isGameStarted && questions.length === 0) {
+    return <div className="text-center mt-5" style={{ color: 'white' }}>Loading game...</div>;
+  }
+
   return (
     <Container className="py-4">
       <Row className="justify-content-center">
@@ -191,7 +209,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                       <div>Your last score:</div>
                       <strong>
                         {score}
-                        {' / '}
+                        /
                         {questions.length * 100}
                       </strong>
                     </div>
@@ -212,12 +230,13 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                     >
                       <span>🔥 Streak: </span>
                       <span>{streak}</span>
-                      {streak >= 2 && (
-                        <span style={{ marginLeft: 8, color: '#d35400' }}>
-                          (
+                      {streak >= 2
+                      && (
+                      <span style={{ marginLeft: 8, color: '#d35400' }}>
+                        (
                           {streakBonus}
-                          )
-                        </span>
+                        )
+                      </span>
                       )}
                     </div>
                   </div>
@@ -296,11 +315,7 @@ const GamePage: React.FC<GameClientPageProps> = ({ submissions }) => {
                     </Button>
                   </div>
 
-                  <LeafletMap
-                    onSelectLocation={(lat, lng) => {
-                      setSelectedLatLng([lat, lng]);
-                    }}
-                  />
+                  <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
 
                   <ProgressBar
                     now={(timer / GAME_TIME) * 100}
