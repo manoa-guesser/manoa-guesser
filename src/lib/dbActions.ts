@@ -1,6 +1,6 @@
 'use server';
 
-import { Stuff, Condition } from '@prisma/client';
+import { Stuff, Condition, Prisma } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
@@ -14,17 +14,13 @@ export type SubmissionFormData = {
   submittedBy: string;
 };
 
+/** Result type for createUser */
+export type CreateUserResult = { ok: true } | { ok: false; field: 'username' | 'email'; message: string };
+
 /**
  * Adds a new stuff to the database.
- * @param stuff, an object with the following properties: name, quantity, owner, condition.
  */
-export async function addStuff(stuff: {
-  name: string;
-  quantity: number;
-  owner: string;
-  condition: string;
-}) {
-  // console.log(`addStuff data: ${JSON.stringify(stuff, null, 2)}`);
+export async function addStuff(stuff: { name: string; quantity: number; owner: string; condition: string }) {
   let condition: Condition = 'good';
 
   if (stuff.condition === 'poor') {
@@ -45,7 +41,7 @@ export async function addStuff(stuff: {
       condition,
     },
   });
-  // After adding, redirect to the list page
+
   redirect('/list');
 }
 
@@ -61,12 +57,7 @@ export async function addSubmission(submission: SubmissionFormData) {
   });
 }
 
-/**
- * Edits an existing stuff in the database.
- * @param stuff, an object with the following properties: id, name, quantity, owner, condition.
- */
 export async function editStuff(stuff: Stuff) {
-  // console.log(`editStuff data: ${JSON.stringify(stuff, null, 2)}`);
   await prisma.stuff.update({
     where: { id: stuff.id },
     data: {
@@ -76,45 +67,76 @@ export async function editStuff(stuff: Stuff) {
       condition: stuff.condition,
     },
   });
-  // After updating, redirect to the list page
+
   redirect('/list');
 }
 
-/**
- * Deletes an existing stuff from the database.
- * @param id, the id of the stuff to delete.
- */
 export async function deleteStuff(id: number) {
-  // console.log(`deleteStuff id: ${id}`);
   await prisma.stuff.delete({
     where: { id },
   });
-  // After deleting, redirect to the list page
+
   redirect('/list');
 }
 
 /**
  * Creates a new user in the database.
- * @param credentials, an object with the following properties: email, password.
+ * Returns a structured result instead of throwing for duplicate username/email.
  */
-export async function createUser(credentials: { email: string; password: string }) {
-  // console.log(`createUser data: ${JSON.stringify(credentials, null, 2)}`);
+export async function createUser(credentials: {
+  email: string;
+  password: string;
+  username: string;
+}): Promise<CreateUserResult> {
   const password = await hash(credentials.password, 10);
-  await prisma.user.create({
-    data: {
-      email: credentials.email,
-      password,
-      // role and score use defaults from the Prisma schema
-    },
-  });
+
+  try {
+    await prisma.user.create({
+      data: {
+        email: credentials.email,
+        password,
+        username: credentials.username,
+        // role and score use defaults from the Prisma schema
+      },
+    });
+
+    return { ok: true };
+  } catch (err: unknown) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      const target = err.meta?.target as string[] | string | undefined;
+
+      const includesField = (field: string) => {
+        if (!target) return false;
+        if (Array.isArray(target)) return target.includes(field);
+        return target === field;
+      };
+
+      if (includesField('username')) {
+        return {
+          ok: false,
+          field: 'username',
+          message: 'This username is already taken.',
+        };
+      }
+
+      if (includesField('email')) {
+        return {
+          ok: false,
+          field: 'email',
+          message: 'This email is already in use.',
+        };
+      }
+    }
+
+    // Unexpected error: still throw so we see it in logs / dev
+    throw err;
+  }
 }
 
 /**
  * Changes the password of an existing user in the database.
- * @param credentials, an object with the following properties: email, password.
  */
 export async function changePassword(credentials: { email: string; password: string }) {
-  // console.log(`changePassword data: ${JSON.stringify(credentials, null, 2)}`);
   const password = await hash(credentials.password, 10);
   await prisma.user.update({
     where: { email: credentials.email },
@@ -129,7 +151,6 @@ export async function changePassword(credentials: { email: string; password: str
  * Uses the EditUserFormValues type (no password).
  */
 export async function editUser(user: EditUserFormValues) {
-  // console.log(`editUser data: ${JSON.stringify(user, null, 2)}`);
   await prisma.user.update({
     where: { id: user.id },
     data: {
@@ -137,23 +158,19 @@ export async function editUser(user: EditUserFormValues) {
       username: user.username ?? null,
       role: user.role,
       score: user.score,
-      // password is NOT changed here
     },
   });
 
-  // Change this path to whatever your admin/user list route is
-  redirect('/admin'); // or '/admin/users' or similar
+  redirect('/admin');
 }
 
 /**
- * (Optional) Deletes an existing user from the database.
- * Be careful with this in production.
+ * Deletes an existing user from the database.
  */
 export async function deleteUser(id: number) {
   await prisma.user.delete({
     where: { id },
   });
 
-  // Adjust redirect as needed
   redirect('/admin');
 }
