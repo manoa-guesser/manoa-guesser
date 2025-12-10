@@ -60,7 +60,7 @@ const SignUp = () => {
 
       // Only sign in if user creation succeeded
       await signIn('credentials', {
-        callbackUrl: '/add',
+        callbackUrl: '/',
         email: data.email,
         password: data.password,
       });
