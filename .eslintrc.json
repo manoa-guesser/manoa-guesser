@@ -26,6 +26,9 @@
     "prefer-arrow-callback": "off",
     "react/prop-types": "off",
     "consistent-return": "off",
+    "@next/next/no-img-element": "off",
+    "no-alert": "off",
+    "no-restricted-globals": "off",
 
     // ✅ Allow TS/TSX imports without extensions
     "import/extensions": [
