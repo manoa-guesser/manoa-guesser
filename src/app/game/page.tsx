@@ -1,11 +1,8 @@
-import prisma from '@/lib/prisma';
-// import GamePage from '../components/GameClientPage';
 import GamePage from '../../components/GameClientPage';
 
-export default async function GamePageWrapper() {
-  const submissions = await prisma.submission.findMany({
-    orderBy: { id: 'asc' }, // optional
-  });
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-  return <GamePage submissions={submissions} />;
+export default function GamePageWrapper() {
+  return <GamePage />;
 }

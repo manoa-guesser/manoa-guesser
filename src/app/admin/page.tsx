@@ -6,6 +6,7 @@ import { adminProtectedPage } from '@/lib/page-protection';
 import authOptions from '@/lib/authOptions';
 import ImageModerationSection from '@/components/ImageModerationSection';
 import ApprovedSubmissionsTable from '@/components/ApprovedSubmissionsTable';
+import ReportedImagesSection from '@/components/ReportedImagesSection';
 
 const AdminPage = async () => {
   const session = await getServerSession(authOptions);
@@ -36,8 +37,8 @@ const AdminPage = async () => {
   });
 
   return (
-    <main className="min-vh-100 py-4">
-      <Container fluid className="py-3">
+    <main className="py-4">
+      <Container id="list" fluid className="py-3">
         {/* Page header */}
         <Row className="mb-4">
           <Col>
@@ -61,7 +62,54 @@ const AdminPage = async () => {
           </Col>
         </Row>
 
-        {/* SECTION 1: Pending Image Moderation */}
+        {/* SECTION 1: Users */}
+        <Row className="mb-5">
+          <Col>
+            <Card className="shadow-sm rounded-4 admin-card p-4">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h2 className="fw-bold mb-1 hero-subtitle">Players Information</h2>
+                  <p className="text-muted mb-0">View all users along with their usernames, roles, and scores.</p>
+                </div>
+                <Badge bg="success" pill>
+                  {users.length}
+                  &nbsp;players
+                </Badge>
+              </div>
+
+              <Table striped bordered hover responsive>
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Score</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id}>
+                      <td>{user.email}</td>
+                      <td>{user.username ?? '-'}</td>
+                      <td>{user.role}</td>
+                      <td>{user.score}</td>
+                      <td>
+                        <Link href={`/edit/${user.id}`}>
+                          <Button variant="outline-primary" size="sm">
+                            Edit User
+                          </Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* SECTION 2: Pending Image Moderation */}
         <ImageModerationSection
           initialSubmissions={pendingSubmissions.map((s) => ({
             id: s.id,
@@ -151,6 +199,17 @@ const AdminPage = async () => {
             </Card>
           </Col>
         </Row>
+        {/* SECTION 4: Reported Images with actions */}
+        <ReportedImagesSection
+          initialSubmissions={reportedSubmissions.map((s) => ({
+            id: s.id,
+            imageUrl: s.imageUrl,
+            caption: s.caption,
+            submittedBy: s.submittedBy,
+            reporters: Array.isArray(s.reporters) ? (s.reporters as string[]) : [],
+            reportCount: s.reportCount,
+          }))}
+        />
       </Container>
     </main>
   );

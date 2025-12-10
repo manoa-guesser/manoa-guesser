@@ -17,7 +17,7 @@ body {
   height: 100%;
   padding: 0;
   margin: 0;
-  background: #ffffff;
+  background: #272727;
 }
 
 /* -------------------------------- */
@@ -125,9 +125,9 @@ body {
 
   text-shadow:
     -2px -2px 0 red,
-     2px -2px 0 red,
-    -2px  2px 0 red,
-     2px  2px 0 red;
+    2px -2px 0 red,
+    -2px 2px 0 red,
+    2px 2px 0 red;
 }
 
 /* -------------------------------- */
@@ -262,7 +262,7 @@ body {
 }
 
 /* Green submit button */
-.swal-btn-submit {
+.green_btn {
   background-color: var(--uh-green) !important;
   color: white !important;
 }
@@ -279,4 +279,13 @@ body {
   justify-content: center !important;
   gap: 20px !important; /* perfect spacing */
   margin-top: 20px !important;
+}
+
+.footer {
+  background-color: var(--uh-green) !important;
+  color: white;
+  /* text-align: center; */
+  padding: 1rem 0;
+  margin-top: auto;
+  border-top: 3px solid #ffffff;
 }

@@ -22,10 +22,7 @@ async function ensureAdmin() {
   return user;
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const adminUser = await ensureAdmin();
   if (!adminUser) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
@@ -36,11 +33,27 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
 
-  const body = await req.json();
-  const status = body.status as 'PENDING' | 'APPROVED' | 'REJECTED' | undefined;
+  const body = await req.json().catch(() => ({}) as any);
 
+  const status = body.status as 'PENDING' | 'APPROVED' | 'REJECTED' | undefined;
+  const action = body.action as 'clearReports' | undefined;
+
+  // Handle "clearReports" from the Reported Images section
+  if (action === 'clearReports') {
+    const updated = await prisma.submission.update({
+      where: { id },
+      data: {
+        reportCount: 0,
+        reporters: [], // assumes reporters: Json? in schema
+      },
+    });
+
+    return NextResponse.json(updated);
+  }
+
+  // Handle status update for moderation (approve / reject)
   if (!status) {
-    return NextResponse.json({ error: 'Missing status' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing status or action' }, { status: 400 });
   }
 
   const updated = await prisma.submission.update({
@@ -51,10 +64,7 @@ export async function PATCH(
   return NextResponse.json(updated);
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const adminUser = await ensureAdmin();
   if (!adminUser) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });

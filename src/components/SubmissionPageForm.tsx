@@ -2,15 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
-import {
-  Button,
-  Card,
-  Col,
-  Container,
-  Form,
-  Row,
-  Image,
-} from 'react-bootstrap';
+import { Button, Card, Col, Container, Form, Row, Image } from 'react-bootstrap';
 import dynamic from 'next/dynamic';
 import swal from 'sweetalert';
 import { redirect } from 'next/navigation';
@@ -81,9 +73,7 @@ const SubmissionForm: React.FC = () => {
     }
 
     // Get public URL
-    const { data: publicURLData } = supabase.storage
-      .from('submissions')
-      .getPublicUrl(fileName);
+    const { data: publicURLData } = supabase.storage.from('submissions').getPublicUrl(fileName);
 
     const { publicUrl } = publicURLData;
 
@@ -125,30 +115,19 @@ const SubmissionForm: React.FC = () => {
   };
 
   return (
-    <Container className="py-3">
+    <Container className="py-4 min-vh-100">
       <Row className="justify-content-center">
         <Col xs={6}>
-          <Card>
+          <Card className="home-card">
             <Card.Body>
-              <h2 className="text-center mb-3 hero-title">
-                Submit a Manoa Location
-              </h2>
+              <h2 className="text-center mb-3 hero-title">Submit a Manoa Location</h2>
 
               <Form onSubmit={handleSubmit(onSubmit)}>
                 {/* Image Upload */}
                 <Form.Group className="mb-3">
                   <Form.Label>Upload Image</Form.Label>
-                  <Form.Control
-                    type="file"
-                    accept="image/*"
-                    {...register('image')}
-                    onChange={handleImageChange}
-                  />
-                  {errors.imageUrl && (
-                    <div className="text-danger small">
-                      {errors.imageUrl.message}
-                    </div>
-                  )}
+                  <Form.Control type="file" accept="image/*" {...register('image')} onChange={handleImageChange} />
+                  {errors.imageUrl && <div className="text-danger small">{errors.imageUrl.message}</div>}
                 </Form.Group>
 
                 {/* Preview */}
@@ -167,32 +146,28 @@ const SubmissionForm: React.FC = () => {
                 {/* Caption */}
                 <Form.Group className="mb-3">
                   <Form.Label>Hint</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Hint..."
-                    {...register('caption')}
-                  />
+                  <Form.Control type="text" placeholder="Hint..." {...register('caption')} />
                 </Form.Group>
 
                 {/* GPS Coordinates */}
                 <Form.Group className="mb-3">
                   <Form.Label>Select Location on Map</Form.Label>
                   <SubmissionMap setValue={setValue} />
+                  {/* Disclaimer */}
+                  <div style={{ fontSize: '0.85rem', color: 'gray', marginTop: '8px', opacity: 0.8 }}>
+                    Submitted images will only appear in the game after approval by administrators.
+                  </div>
                 </Form.Group>
-                <input
-                  type="hidden"
-                  {...register('submittedBy')}
-                  value={session?.user?.email || ''}
-                />
+                <input type="hidden" {...register('submittedBy')} value={session?.user?.email || ''} />
                 <input type="hidden" {...register('imageUrl')} />
 
-                <Button type="submit" variant="primary" className="me-2">
+                <Button type="submit" variant="primary" className="me-2 green_btn">
                   Submit
                 </Button>
 
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="danger"
                   onClick={() => {
                     reset();
                     setPreview(null);

@@ -37,7 +37,7 @@ const Home = () => {
                     Create an account to start guessing locations around UH Mānoa and earn points.
                   </p>
                   <div className="d-flex justify-content-center gap-2 mt-2">
-                    <Button href="/auth/signup" variant="primary">
+                    <Button href="/auth/signup" variant="primary" className="green_btn">
                       Sign Up
                     </Button>
                     <Button href="/auth/signin" variant="outline-success">
@@ -56,7 +56,7 @@ const Home = () => {
                     Ready to keep exploring the Manoa campus and climb the leaderboard?
                   </p>
                   <div className="d-flex justify-content-center gap-2 mt-2">
-                    <Button href="/game" variant="primary">
+                    <Button href="/game" variant="primary" className="green_btn">
                       Play Game
                     </Button>
                     <Button href="/leaderboard" variant="outline-success">
