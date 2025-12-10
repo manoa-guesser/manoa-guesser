@@ -1,46 +1,43 @@
+// app/admin/page.tsx
 import { getServerSession } from 'next-auth';
-import { Col, Container, Row, Table, Badge, Button, Card } from 'react-bootstrap';
+import { Col, Container, Row, Card, Badge } from 'react-bootstrap';
 import prisma from '@/lib/prisma';
 import { adminProtectedPage } from '@/lib/page-protection';
 import authOptions from '@/lib/authOptions';
-import Link from 'next/link';
 import ImageModerationSection from '@/components/ImageModerationSection';
+import ApprovedSubmissionsTable from '@/components/ApprovedSubmissionsTable';
 
 const AdminPage = async () => {
   const session = await getServerSession(authOptions);
+
   adminProtectedPage(
-    session as {
-      user: { email: string; id: string; randomKey: string };
-    } | null,
+    session as { user: { email: string; id: string; randomKey: string } } | null,
   );
 
-  const stuff = await prisma.stuff.findMany({});
   const users = await prisma.user.findMany({});
-
   const adminCount = users.filter((user) => user.role === 'ADMIN').length;
 
-  // Pending submissions for Image Moderation
+  // Pending submissions
   const pendingSubmissions = await prisma.submission.findMany({
     where: { status: 'PENDING' },
     orderBy: { createdAt: 'desc' },
   });
 
-  // Reported images (reportCount > 0)
+  // Approved submissions
+  const approvedSubmissions = await prisma.submission.findMany({
+    where: { status: 'APPROVED' },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  // Reported submissions
   const reportedSubmissions = await prisma.submission.findMany({
-    where: {
-      reportCount: {
-        gt: 0,
-      },
-    },
-    orderBy: [
-      { reportCount: 'desc' },
-      { createdAt: 'desc' },
-    ],
+    where: { reportCount: { gt: 0 } },
+    orderBy: [{ reportCount: 'desc' }, { createdAt: 'desc' }],
   });
 
   return (
     <main className="min-vh-100 py-4">
-      <Container id="list" fluid className="py-3">
+      <Container fluid className="py-3">
         {/* Page header */}
         <Row className="mb-4">
           <Col>
@@ -48,15 +45,9 @@ const AdminPage = async () => {
           </Col>
         </Row>
 
-        {/* Quick stats row */}
+        {/* Quick stats */}
         <Row className="mb-4">
-          <Col md={4} className="mb-3 mb-md-0">
-            <Card className="shadow-sm rounded-4 p-3">
-              <h6 className="text-muted text-uppercase mb-1">Total Items</h6>
-              <h3 className="mb-0">{stuff.length}</h3>
-            </Card>
-          </Col>
-          <Col md={4} className="mb-3 mb-md-0">
+          <Col md={4}>
             <Card className="shadow-sm rounded-4 p-3">
               <h6 className="text-muted text-uppercase mb-1">Total Users</h6>
               <h3 className="mb-0">{users.length}</h3>
@@ -70,55 +61,7 @@ const AdminPage = async () => {
           </Col>
         </Row>
 
-        {/* SECTION 1: Users – Players & Scores */}
-        <Row className="mb-5">
-          <Col>
-            <Card className="shadow-sm rounded-4 admin-card p-4">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                  <h2 className="fw-bold mb-1 hero-subtitle">Players Information</h2>
-                  <p className="text-muted mb-0">
-                    View all users along with their usernames, roles, and current scores.
-                  </p>
-                </div>
-                <Badge bg="success" pill>
-                  {users.length}
-                  &nbsp;players
-                </Badge>
-              </div>
-              <Table striped bordered hover responsive className="mb-0">
-                <thead>
-                  <tr>
-                    <th>Email</th>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Score</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id}>
-                      <td>{user.email}</td>
-                      <td>{user.username ?? '-'}</td>
-                      <td>{user.role}</td>
-                      <td>{user.score}</td>
-                      <td>
-                        <Link href={`/edit/${user.id}`}>
-                          <Button variant="outline-primary" size="sm">
-                            Edit User
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </Card>
-          </Col>
-        </Row>
-
-        {/* SECTION 2: Image Moderation (pending images only) */}
+        {/* SECTION 1: Pending Image Moderation */}
         <ImageModerationSection
           initialSubmissions={pendingSubmissions.map((s) => ({
             id: s.id,
@@ -130,30 +73,40 @@ const AdminPage = async () => {
           }))}
         />
 
+        {/* SECTION 2: Approved Submissions (with Delete button) */}
+        <Row className="mb-5">
+          <Col>
+            <Card className="shadow-sm rounded-4 admin-card p-4">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h2 className="fw-bold mb-0 hero-subtitle">Approved Submissions</h2>
+                <Badge bg="success" pill>
+                  {approvedSubmissions.length}
+                  {' '}
+                  approved
+                </Badge>
+              </div>
+
+              <ApprovedSubmissionsTable submissions={approvedSubmissions} />
+            </Card>
+          </Col>
+        </Row>
+
         {/* SECTION 3: Reported Images */}
         <Row className="mb-5">
           <Col>
             <Card className="shadow-sm rounded-4 admin-card p-4">
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                  <h2 className="fw-bold mb-1 hero-subtitle">Reported Images</h2>
-                  <p className="text-muted mb-0">
-                    Images that have been reported by players. Use this section to review
-                    frequently reported content.
-                  </p>
-                </div>
+                <h2 className="fw-bold mb-0 hero-subtitle">Reported Images</h2>
                 <Badge bg={reportedSubmissions.length > 0 ? 'danger' : 'secondary'} pill>
                   {reportedSubmissions.length}
-                  &nbsp;reported
+                  reported
                 </Badge>
               </div>
 
               {reportedSubmissions.length === 0 ? (
-                <p className="text-center text-muted py-4 mb-0">
-                  There are currently no reported images.
-                </p>
+                <p className="text-center text-muted py-4 mb-0">No reported images</p>
               ) : (
-                <Table striped bordered hover responsive className="mb-0">
+                <table className="table table-striped table-bordered table-hover">
                   <thead>
                     <tr>
                       <th>Preview</th>
@@ -168,7 +121,6 @@ const AdminPage = async () => {
                     {reportedSubmissions.map((s) => (
                       <tr key={s.id}>
                         <td>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={s.imageUrl}
                             alt={s.caption || `Submission ${s.id}`}
@@ -181,9 +133,7 @@ const AdminPage = async () => {
                           />
                         </td>
                         <td>
-                          <div className="fw-semibold">
-                            {s.caption || `Submission #${s.id}`}
-                          </div>
+                          <div className="fw-semibold">{s.caption || `Submission #${s.id}`}</div>
                           <div className="text-muted small">
                             ID:
                             {s.id}
@@ -196,7 +146,7 @@ const AdminPage = async () => {
                       </tr>
                     ))}
                   </tbody>
-                </Table>
+                </table>
               )}
             </Card>
           </Col>
