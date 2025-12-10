@@ -1,5 +1,9 @@
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
 function shuffle<T>(array: T[]) {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -38,10 +42,15 @@ export async function GET() {
 
     const ordered = selectedIds.map(id => submissions.find(s => s.id === id));
     // console.log('Ordering Submissions for Game:', ordered);
-
-    return Response.json(ordered);
+    return new Response(JSON.stringify(ordered), {
+      status: 200,
+      headers: { 'Cache-Control': 'no-store' },
+    });
   } catch (err) {
     console.error(err);
-    return Response.json({ error: 'Server error' }, { status: 500 });
+    return new Response(JSON.stringify({ error: 'Server error' }), {
+      status: 500,
+      headers: { 'Cache-Control': 'no-store' },
+    });
   }
 }
