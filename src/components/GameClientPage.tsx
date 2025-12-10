@@ -43,6 +43,7 @@ function formatSubmissions(subs: Submission[]) {
       imageUrl: s.imageUrl,
       correctAnswer: s.location,
       hint: s.caption,
+      submittedBy: s.submittedBy,
       lat: parseFloat(latStr),
       lng: parseFloat(lngStr),
     };
@@ -277,6 +278,13 @@ const GamePage = () => {
                       className="rounded"
                       style={{ objectFit: 'cover' }}
                     />
+
+                    <div style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}>
+                      Submitted by:
+                      <strong>
+                        {currentQuestion.submittedBy}
+                      </strong>
+                    </div>
 
                     <Button
                       variant="outline-danger"
