@@ -9,10 +9,9 @@ import { Submission } from '@prisma/client';
 
 const GAME_TIME = 20;
 const STREAK_BONUS_POINTS = 25;
+const COUNTDOWN_START = 3; // Countdown seconds
 
-const LeafletMap = dynamic(() => import('@/components/GameMap'), {
-  ssr: false,
-});
+const LeafletMap = dynamic(() => import('@/components/GameMap'), { ssr: false });
 
 function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371e3;
@@ -21,7 +20,9 @@ function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: numbe
   const Δφ = ((lat2 - lat1) * Math.PI) / 180;
   const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  const a =
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -52,6 +53,8 @@ function formatSubmissions(subs: Submission[]) {
 const GamePage = () => {
   const [questions, setQuestions] = useState<any[]>([]);
   const [isGameStarted, setIsGameStarted] = useState(false);
+  const [isCountdownActive, setIsCountdownActive] = useState(false);
+  const [countdown, setCountdown] = useState(COUNTDOWN_START);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timer, setTimer] = useState(GAME_TIME);
   const [score, setScore] = useState(0);
@@ -82,7 +85,6 @@ const GamePage = () => {
     }
 
     const [guessLat, guessLng] = selectedLatLng;
-
     const distance = getDistanceMeters(guessLat, guessLng, currentQuestion.lat, currentQuestion.lng);
     const roundScore = scoreFromDistance(distance);
 
@@ -92,7 +94,6 @@ const GamePage = () => {
     if (roundScore > 0) {
       newStreak = streak + 1;
       bonus = newStreak >= 2 ? (newStreak - 1) * STREAK_BONUS_POINTS : 0;
-
       setStreak(newStreak);
       setStreakBonus(bonus);
     } else {
@@ -127,7 +128,6 @@ const GamePage = () => {
     setStreakBonus(0);
 
     if (selectedLatLng) {
-      // Auto-submit if user placed a pin
       handleSubmit(new Event('submit') as unknown as React.FormEvent);
       return;
     }
@@ -142,7 +142,7 @@ const GamePage = () => {
   }, [currentQuestionIndex, score, endGame, questions.length, selectedLatLng]);
 
   useEffect(() => {
-    if (!isGameStarted || isGameOver) return;
+    if (!isGameStarted || isGameOver || isCountdownActive) return;
 
     const interval = setInterval(() => {
       setTimer((prev) => {
@@ -156,7 +156,7 @@ const GamePage = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isGameStarted, isGameOver, handleTimeUp]);
+  }, [isGameStarted, isGameOver, handleTimeUp, isCountdownActive]);
 
   const startGame = async () => {
     try {
@@ -169,8 +169,8 @@ const GamePage = () => {
       }
 
       setQuestions(formatSubmissions(data));
-
-      setIsGameStarted(true);
+      setIsCountdownActive(true);
+      setCountdown(COUNTDOWN_START);
       setIsGameOver(false);
       setCurrentQuestionIndex(0);
       setScore(0);
@@ -185,6 +185,27 @@ const GamePage = () => {
     }
   };
 
+  // Countdown effect
+  useEffect(() => {
+    if (!isCountdownActive) return;
+    if (countdown <= 0) {
+      setIsCountdownActive(false);
+      setIsGameStarted(true);
+      return;
+    }
+
+    const timerId = setTimeout(() => setCountdown(countdown - 1), 1000);
+    return () => clearTimeout(timerId);
+  }, [countdown, isCountdownActive]);
+
+  if (isCountdownActive) {
+    return (
+      <Container className="text-center py-5" style={{ color: 'white', fontSize: '3rem' }}>
+        {countdown === 0 ? 'Go!' : `Ready… ${countdown}`}
+      </Container>
+    );
+  }
+
   if (isGameStarted && questions.length === 0) {
     return <div className="text-center mt-5" style={{ color: 'white' }}>Loading game...</div>;
   }
@@ -197,12 +218,7 @@ const GamePage = () => {
             <Card.Body>
               <Card.Title
                 className="text-center mb-4 hero-title"
-                style={{
-                  fontSize: '2.2rem',
-                  fontWeight: '700',
-                  lineHeight: '1.5',
-                  letterSpacing: '0.5px',
-                }}
+                style={{ fontSize: '2.2rem', fontWeight: '700', lineHeight: '1.5', letterSpacing: '0.5px' }}
               >
                 Manoa Guesser
               </Card.Title>
@@ -213,10 +229,7 @@ const GamePage = () => {
                     variant="primary"
                     size="lg"
                     onClick={startGame}
-                    style={{
-                      backgroundColor: '#1e6f43',
-                      borderColor: '#1e6f43',
-                    }}
+                    style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}
                   >
                     Start Game
                   </Button>
@@ -224,9 +237,7 @@ const GamePage = () => {
                   {isGameOver && (
                     <div className="mt-3">
                       <div>Your last score:</div>
-                      <strong>
-                        {score}/{questions.length * 100}
-                      </strong>
+                      <strong>{score}/{questions.length * 100}</strong>
                     </div>
                   )}
                 </div>
@@ -262,14 +273,7 @@ const GamePage = () => {
                   <div className="d-flex justify-content-end mb-2">
                     <Button
                       variant="light"
-                      style={{
-                        borderRadius: '50%',
-                        width: 36,
-                        height: 36,
-                        fontWeight: 'bold',
-                        padding: 0,
-                        border: '1px solid #ccc',
-                      }}
+                      style={{ borderRadius: '50%', width: 36, height: 36, fontWeight: 'bold', padding: 0, border: '1px solid #ccc' }}
                       onClick={() => setShowHint((prev) => !prev)}
                     >
                       ?
@@ -278,8 +282,7 @@ const GamePage = () => {
 
                   {showHint && (
                     <div className="hint-box mb-3">
-                      <strong>Hint:</strong>
-                      <br />
+                      <strong>Hint:</strong><br />
                       {currentQuestion.hint}
                     </div>
                   )}
@@ -335,18 +338,12 @@ const GamePage = () => {
                   </ProgressBar>
 
                   <Form onSubmit={handleSubmit}>
-                    <Button
-                      type="submit"
-                      className="w-100 mb-2"
-                      style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}
-                    >
+                    <Button type="submit" className="w-100 mb-2" style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}>
                       Submit
                     </Button>
 
                     <div className="text-center">
-                      <strong>Score:</strong>
-                      <br />
-                      {score}
+                      <strong>Score:</strong><br />{score}
                     </div>
                   </Form>
                 </>
