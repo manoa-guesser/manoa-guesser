@@ -23,24 +23,20 @@ const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials.password) {
           return null;
         }
+
         const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email,
-          },
+          where: { email: credentials.email },
         });
-        if (!user) {
-          return null;
-        }
+
+        if (!user) return null;
 
         const isPasswordValid = await compare(credentials.password, user.password);
-        if (!isPasswordValid) {
-          return null;
-        }
+        if (!isPasswordValid) return null;
 
         return {
-          id: `${user.id}`,
+          id: `${user.id}`, // We need this for session.user.id
           email: user.email,
-          randomKey: user.role,
+          randomKey: user.role, // Keeping your existing custom field
         };
       },
     }),
@@ -48,26 +44,13 @@ const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/auth/signin',
     signOut: '/auth/signout',
-    //   error: '/auth/error',
-    //   verifyRequest: '/auth/verify-request',
-    //   newUser: '/auth/new-user'
   },
+
+  // ⭐ UPDATED CALLBACKS ⭐
   callbacks: {
-    session: ({ session, token }) => {
-      // console.log('Session Callback', { session, token })
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: token.id,
-          randomKey: token.randomKey,
-        },
-      };
-    },
     jwt: ({ token, user }) => {
-      // console.log('JWT Callback', { token, user })
       if (user) {
-        const u = user as unknown as any;
+        const u = user as any;
         return {
           ...token,
           id: u.id,
@@ -76,7 +59,20 @@ const authOptions: NextAuthOptions = {
       }
       return token;
     },
+
+    session: ({ session, token }) => {
+      // Inject token.id into the session
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id, // REQUIRED for /api/score route
+          randomKey: token.randomKey,
+        },
+      };
+    },
   },
+
   secret: process.env.NEXTAUTH_SECRET,
 };
 
