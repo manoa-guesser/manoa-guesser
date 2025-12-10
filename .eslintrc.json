@@ -26,6 +26,7 @@
     "prefer-arrow-callback": "off",
     "react/prop-types": "off",
     "consistent-return": "off",
+    "no-alert": "off",
 
     // ✅ Allow TS/TSX imports without extensions
     "import/extensions": [

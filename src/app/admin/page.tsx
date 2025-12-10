@@ -6,6 +6,7 @@ import authOptions from '@/lib/authOptions';
 import Link from 'next/link';
 import ImageModerationSection from '@/components/ImageModerationSection';
 import ReportedImagesSection from '@/components/ReportedImagesSection';
+import ApprovedSubmissionsTable from '@/components/ApprovedSubmissionsTable';
 
 const AdminPage = async () => {
   const session = await getServerSession(authOptions);
@@ -29,6 +30,12 @@ const AdminPage = async () => {
   const reportedSubmissions = await prisma.submission.findMany({
     where: { reportCount: { gt: 0 } },
     orderBy: [{ reportCount: 'desc' }, { createdAt: 'desc' }],
+  });
+
+  // Approved submissions
+  const approvedSubmissions = await prisma.submission.findMany({
+    where: { status: 'APPROVED' },
+    orderBy: { createdAt: 'desc' },
   });
 
   return (
@@ -133,6 +140,34 @@ const AdminPage = async () => {
             reportCount: s.reportCount,
           }))}
         />
+
+        {/* SECTION 4: Approved Submissions */}
+        <Row className="mb-5">
+          <Col>
+            <Card className="shadow-sm rounded-4 admin-card p-4">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h2 className="fw-bold mb-0 hero-subtitle">Approved Submissions</h2>
+                <Badge bg="success" pill>
+                  {approvedSubmissions.length}
+                  {' '}
+                  approved
+                </Badge>
+              </div>
+
+              <ApprovedSubmissionsTable
+                submissions={approvedSubmissions.map((s) => ({
+                  id: s.id,
+                  imageUrl: s.imageUrl,
+                  caption: s.caption,
+                  submittedBy: s.submittedBy,
+                  status: s.status,
+                  createdAt: s.createdAt.toISOString(),
+                }))}
+              />
+            </Card>
+          </Col>
+        </Row>
+
       </Container>
     </main>
   );
