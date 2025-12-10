@@ -77,6 +77,9 @@ const SubmissionForm: React.FC = () => {
 
     const { publicUrl } = publicURLData;
 
+    // Update form value so addSubmission uses the correct URL
+    setValue('imageUrl', publicUrl);
+
     // Save submission to DB
     await addSubmission({
       imageUrl: publicUrl,
@@ -87,7 +90,7 @@ const SubmissionForm: React.FC = () => {
 
     swal({
       title: 'Success!',
-      text: 'Your image has been submitted.',
+      text: 'Your image has been submitted and is pending admin approval.',
       icon: 'success',
       buttons: {
         submitAgain: {

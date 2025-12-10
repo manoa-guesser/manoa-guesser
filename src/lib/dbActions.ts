@@ -56,10 +56,9 @@ export async function addSubmission(submission: SubmissionFormData) {
       caption: submission.caption,
       location: submission.location,
       submittedBy: submission.submittedBy,
+      status: 'PENDING', // Ensure new submissions are always pending
     },
   });
-
-  redirect('/submission');
 }
 
 /**

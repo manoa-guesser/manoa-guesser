@@ -137,11 +137,15 @@ export default function ImageModerationSection({
                           disabled={isPending || busyId === s.id}
                           onClick={() => handleAction(s.id, 'delete')}
                         >
-                          {busyId === s.id && isPending ? (
-                            <Spinner animation="border" size="sm" />
-                          ) : (
-                            'Delete'
-                          )}
+                          {(() => {
+                            if (busyId === s.id && isPending) {
+                              return <Spinner animation="border" size="sm" />;
+                            }
+                            if (s.status === 'PENDING') {
+                              return 'Reject';
+                            }
+                            return 'Delete';
+                          })()}
                         </Button>
                       </div>
                     </td>
