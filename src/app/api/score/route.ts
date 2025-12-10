@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     data: {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      userId: session.user.id,
+      userId: Number(session.user.id), // FIX: convert string → int
       value: score,
     },
   });
