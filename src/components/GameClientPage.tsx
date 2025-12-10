@@ -9,20 +9,25 @@ import { Submission } from '@prisma/client';
 
 const GAME_TIME = 20;
 const STREAK_BONUS_POINTS = 25;
-const COUNTDOWN_START = 3; // Countdown seconds
+const COUNTDOWN_START = 3;
 
 const LeafletMap = dynamic(() => import('@/components/GameMap'), { ssr: false });
 
-function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+function getDistanceMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) {
   const R = 6371e3;
   const φ1 = (lat1 * Math.PI) / 180;
   const φ2 = (lat2 * Math.PI) / 180;
   const Δφ = ((lat2 - lat1) * Math.PI) / 180;
   const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-  const a =
-    Math.sin(Δφ / 2) ** 2 +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  const a = Math.sin(Δφ / 2) ** 2
+  + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -71,57 +76,72 @@ const GamePage = () => {
   const endGame = useCallback(
     (finalScore: number) => {
       setIsGameOver(true);
-      swal('Game Over!', `Your final score:\n ${finalScore} / ${questions.length * 100}`, 'info', { timer: 5000 });
+      swal(
+        'Game Over!',
+        `Your final score:\n ${finalScore} / ${questions.length * 100}`,
+        'info',
+        { timer: 5000 },
+      );
     },
     [questions.length],
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
 
-    if (!selectedLatLng) {
-      swal('No guess', 'Please drop a pin on the map!', 'warning');
-      return;
-    }
+      if (!selectedLatLng) {
+        swal('No guess', 'Please drop a pin on the map!', 'warning');
+        return;
+      }
 
-    const [guessLat, guessLng] = selectedLatLng;
-    const distance = getDistanceMeters(guessLat, guessLng, currentQuestion.lat, currentQuestion.lng);
-    const roundScore = scoreFromDistance(distance);
+      const [guessLat, guessLng] = selectedLatLng;
+      const distance = getDistanceMeters(
+        guessLat,
+        guessLng,
+        currentQuestion.lat,
+        currentQuestion.lng,
+      );
 
-    let bonus = 0;
-    let newStreak = streak;
+      const roundScore = scoreFromDistance(distance);
 
-    if (roundScore > 0) {
-      newStreak = streak + 1;
-      bonus = newStreak >= 2 ? (newStreak - 1) * STREAK_BONUS_POINTS : 0;
-      setStreak(newStreak);
-      setStreakBonus(bonus);
-    } else {
-      setStreak(0);
-      setStreakBonus(0);
-    }
+      let bonus = 0;
+      let newStreak = streak;
 
-    const totalRoundScore = roundScore + bonus;
-    const newScore = score + totalRoundScore;
+      if (roundScore > 0) {
+        newStreak = streak + 1;
+        bonus = newStreak >= 2 ? (newStreak - 1) * STREAK_BONUS_POINTS : 0;
+        setStreak(newStreak);
+        setStreakBonus(bonus);
+      } else {
+        setStreak(0);
+        setStreakBonus(0);
+      }
 
-    setScore(newScore);
+      const totalRoundScore = roundScore + bonus;
+      const newScore = score + totalRoundScore;
+      setScore(newScore);
 
-    swal({
-      title: `Distance:\n ${distance.toFixed(1)} meters`,
-      text: `You earned ${roundScore} points${bonus ? ` + ${bonus} streak bonus` : ''}`,
-      icon: roundScore > 0 ? 'success' : 'error',
-      timer: 5000,
-    });
+      swal({
+        title: `Distance:\n ${distance.toFixed(1)} meters`,
+        text: `You earned ${roundScore} points${
+          bonus ? ` + ${bonus} streak bonus` : ''
+        }`,
+        icon: roundScore > 0 ? 'success' : 'error',
+        timer: 5000,
+      });
 
-    if (currentQuestionIndex + 1 < questions.length) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-      setSelectedLatLng(null);
-      setTimer(GAME_TIME);
-      setShowHint(false);
-    } else {
-      endGame(newScore);
-    }
-  };
+      if (currentQuestionIndex + 1 < questions.length) {
+        setCurrentQuestionIndex((prev) => prev + 1);
+        setSelectedLatLng(null);
+        setTimer(GAME_TIME);
+        setShowHint(false);
+      } else {
+        endGame(newScore);
+      }
+    },
+    [selectedLatLng, currentQuestion, streak, score, currentQuestionIndex, questions.length, endGame],
+  );
 
   const handleTimeUp = useCallback(() => {
     setStreak(0);
@@ -139,7 +159,7 @@ const GamePage = () => {
     } else {
       endGame(score);
     }
-  }, [currentQuestionIndex, score, endGame, questions.length, selectedLatLng]);
+  }, [currentQuestionIndex, score, endGame, questions.length, selectedLatLng, handleSubmit]);
 
   useEffect(() => {
     if (!isGameStarted || isGameOver || isCountdownActive) return;
@@ -185,7 +205,6 @@ const GamePage = () => {
     }
   };
 
-  // Countdown effect
   useEffect(() => {
     if (!isCountdownActive) return;
     if (countdown <= 0) {
@@ -200,14 +219,21 @@ const GamePage = () => {
 
   if (isCountdownActive) {
     return (
-      <Container className="text-center py-5" style={{ color: 'white', fontSize: '3rem' }}>
+      <Container
+        className="text-center py-5"
+        style={{ color: 'white', fontSize: '3rem' }}
+      >
         {countdown === 0 ? 'Go!' : `Ready… ${countdown}`}
       </Container>
     );
   }
 
   if (isGameStarted && questions.length === 0) {
-    return <div className="text-center mt-5" style={{ color: 'white' }}>Loading game...</div>;
+    return (
+      <div className="text-center mt-5" style={{ color: 'white' }}>
+        Loading game...
+      </div>
+    );
   }
 
   return (
@@ -218,7 +244,12 @@ const GamePage = () => {
             <Card.Body>
               <Card.Title
                 className="text-center mb-4 hero-title"
-                style={{ fontSize: '2.2rem', fontWeight: '700', lineHeight: '1.5', letterSpacing: '0.5px' }}
+                style={{
+                  fontSize: '2.2rem',
+                  fontWeight: '700',
+                  lineHeight: '1.5',
+                  letterSpacing: '0.5px',
+                }}
               >
                 Manoa Guesser
               </Card.Title>
@@ -237,7 +268,13 @@ const GamePage = () => {
                   {isGameOver && (
                     <div className="mt-3">
                       <div>Your last score:</div>
-                      <strong>{score}/{questions.length * 100}</strong>
+                      <strong>
+                        {score}
+                      </strong>
+                      <span> / </span>
+                      <strong>
+                        {questions.length * 100}
+                      </strong>
                     </div>
                   )}
                 </div>
@@ -257,7 +294,17 @@ const GamePage = () => {
                       <span>🔥 Streak: </span>
                       <span>{streak}</span>
                       {streak >= 2 && (
-                        <span style={{ marginLeft: 8, color: '#d35400' }}>({streakBonus})</span>
+                        <>
+                          <span style={{ marginLeft: 8, color: '#d35400' }}>
+                            (
+                          </span>
+                          <span>
+                            {streakBonus}
+                          </span>
+                          <span>
+                            )
+                          </span>
+                        </>
                       )}
                     </div>
 
@@ -273,7 +320,14 @@ const GamePage = () => {
                   <div className="d-flex justify-content-end mb-2">
                     <Button
                       variant="light"
-                      style={{ borderRadius: '50%', width: 36, height: 36, fontWeight: 'bold', padding: 0, border: '1px solid #ccc' }}
+                      style={{
+                        borderRadius: '50%',
+                        width: 36,
+                        height: 36,
+                        fontWeight: 'bold',
+                        padding: 0,
+                        border: '1px solid #ccc',
+                      }}
                       onClick={() => setShowHint((prev) => !prev)}
                     >
                       ?
@@ -282,7 +336,8 @@ const GamePage = () => {
 
                   {showHint && (
                     <div className="hint-box mb-3">
-                      <strong>Hint:</strong><br />
+                      <strong>Hint:</strong>
+                      <br />
                       {currentQuestion.hint}
                     </div>
                   )}
@@ -297,10 +352,17 @@ const GamePage = () => {
                         className="rounded"
                         style={{ objectFit: 'cover' }}
                       />
-                      <div style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}>
-                        Submitted by: <strong>{currentQuestion.submittedBy}</strong>
+                      <div
+                        style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}
+                      >
+                        Submitted by:
+                        <strong>
+                          {currentQuestion.submittedBy}
+                        </strong>
                       </div>
-                      <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
+                      <LeafletMap
+                        onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])}
+                      />
                     </div>
                   ) : (
                     <Row className="mb-3">
@@ -313,12 +375,19 @@ const GamePage = () => {
                           className="rounded"
                           style={{ objectFit: 'cover', width: '100%' }}
                         />
-                        <div style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}>
-                          Submitted by: <strong>{currentQuestion.submittedBy}</strong>
+                        <div
+                          style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}
+                        >
+                          Submitted by:
+                          <strong>
+                            {currentQuestion.submittedBy}
+                          </strong>
                         </div>
                       </Col>
                       <Col md={6}>
-                        <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
+                        <LeafletMap
+                          onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])}
+                        />
                       </Col>
                     </Row>
                   )}
@@ -338,12 +407,18 @@ const GamePage = () => {
                   </ProgressBar>
 
                   <Form onSubmit={handleSubmit}>
-                    <Button type="submit" className="w-100 mb-2" style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}>
+                    <Button
+                      type="submit"
+                      className="w-100 mb-2"
+                      style={{ backgroundColor: '#1e6f43', borderColor: '#1e6f43' }}
+                    >
                       Submit
                     </Button>
 
                     <div className="text-center">
-                      <strong>Score:</strong><br />{score}
+                      <strong>Score:</strong>
+                      <br />
+                      {score}
                     </div>
                   </Form>
                 </>
