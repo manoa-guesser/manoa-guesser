@@ -96,7 +96,7 @@ const SubmissionForm: React.FC = () => {
         submitAgain: {
           text: 'Submit Another',
           value: 'submitAgain',
-          className: 'swal-btn swal-btn-submit',
+          className: 'swal-btn green_btn',
         },
         playGame: {
           text: 'Play Game',
