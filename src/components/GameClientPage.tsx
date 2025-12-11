@@ -13,20 +13,14 @@ const COUNTDOWN_START = 3;
 
 const LeafletMap = dynamic(() => import('@/components/GameMap'), { ssr: false });
 
-function getDistanceMeters(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-) {
+function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371e3;
   const φ1 = (lat1 * Math.PI) / 180;
   const φ2 = (lat2 * Math.PI) / 180;
   const Δφ = ((lat2 - lat1) * Math.PI) / 180;
   const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-  const a = Math.sin(Δφ / 2) ** 2
-  + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
@@ -74,14 +68,20 @@ const GamePage = () => {
   const currentQuestion = questions[currentQuestionIndex];
 
   const endGame = useCallback(
-    (finalScore: number) => {
+    async (finalScore: number) => {
       setIsGameOver(true);
-      swal(
-        'Game Over!',
-        `Your final score:\n ${finalScore} / ${questions.length * 100}`,
-        'info',
-        { timer: 5000 },
-      );
+
+      try {
+        await fetch('/api/score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ score: finalScore }),
+        });
+      } catch (error) {
+        console.error('Failed to save score:', error);
+      }
+
+      swal('Game Over!', `Your final score:\n ${finalScore} / ${questions.length * 100}`, 'info', { timer: 5000 });
     },
     [questions.length],
   );
@@ -96,12 +96,7 @@ const GamePage = () => {
       }
 
       const [guessLat, guessLng] = selectedLatLng;
-      const distance = getDistanceMeters(
-        guessLat,
-        guessLng,
-        currentQuestion.lat,
-        currentQuestion.lng,
-      );
+      const distance = getDistanceMeters(guessLat, guessLng, currentQuestion.lat, currentQuestion.lng);
 
       const roundScore = scoreFromDistance(distance);
 
@@ -124,9 +119,7 @@ const GamePage = () => {
 
       swal({
         title: `Distance:\n ${distance.toFixed(1)} meters`,
-        text: `You earned ${roundScore} points${
-          bonus ? ` + ${bonus} streak bonus` : ''
-        }`,
+        text: `You earned ${roundScore} points${bonus ? ` + ${bonus} streak bonus` : ''}`,
         icon: roundScore > 0 ? 'success' : 'error',
         timer: 5000,
       });
@@ -219,10 +212,7 @@ const GamePage = () => {
 
   if (isCountdownActive) {
     return (
-      <Container
-        className="text-center py-5"
-        style={{ color: 'white', fontSize: '3rem' }}
-      >
+      <Container className="text-center py-5" style={{ color: 'white', fontSize: '3rem' }}>
         {countdown === 0 ? 'Go!' : `Ready… ${countdown}`}
       </Container>
     );
@@ -268,13 +258,9 @@ const GamePage = () => {
                   {isGameOver && (
                     <div className="mt-3">
                       <div>Your last score:</div>
-                      <strong>
-                        {score}
-                      </strong>
+                      <strong>{score}</strong>
                       <span> / </span>
-                      <strong>
-                        {questions.length * 100}
-                      </strong>
+                      <strong>{questions.length * 100}</strong>
                     </div>
                   )}
                 </div>
@@ -295,15 +281,9 @@ const GamePage = () => {
                       <span>{streak}</span>
                       {streak >= 2 && (
                         <>
-                          <span style={{ marginLeft: 8, color: '#d35400' }}>
-                            (
-                          </span>
-                          <span>
-                            {streakBonus}
-                          </span>
-                          <span>
-                            )
-                          </span>
+                          <span style={{ marginLeft: 8, color: '#d35400' }}>(</span>
+                          <span>{streakBonus}</span>
+                          <span>)</span>
                         </>
                       )}
                     </div>
@@ -352,17 +332,11 @@ const GamePage = () => {
                         className="rounded"
                         style={{ objectFit: 'cover' }}
                       />
-                      <div
-                        style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}
-                      >
+                      <div style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}>
                         Submitted by:
-                        <strong>
-                          {currentQuestion.submittedBy}
-                        </strong>
+                        <strong>{currentQuestion.submittedBy}</strong>
                       </div>
-                      <LeafletMap
-                        onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])}
-                      />
+                      <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
                     </div>
                   ) : (
                     <Row className="mb-3">
@@ -375,19 +349,13 @@ const GamePage = () => {
                           className="rounded"
                           style={{ objectFit: 'cover', width: '100%' }}
                         />
-                        <div
-                          style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}
-                        >
+                        <div style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}>
                           Submitted by:
-                          <strong>
-                            {currentQuestion.submittedBy}
-                          </strong>
+                          <strong>{currentQuestion.submittedBy}</strong>
                         </div>
                       </Col>
                       <Col md={6}>
-                        <LeafletMap
-                          onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])}
-                        />
+                        <LeafletMap onSelectLocation={(lat, lng) => setSelectedLatLng([lat, lng])} />
                       </Col>
                     </Row>
                   )}

@@ -13,8 +13,21 @@ model User {
   email    String  @unique
   password String
   role     Role    @default(USER)
-  score    Int     @default(0)
+  score    Int     @default(0)   // legacy field, still fine to keep
   username String? @unique
+
+  // NEW: relation to multiple game scores
+  scores   Score[]
+}
+
+model Score {
+  id        Int      @id @default(autoincrement())
+  value     Int
+  createdAt DateTime @default(now())
+
+  // relation back to user
+  user     User   @relation(fields: [userId], references: [id])
+  userId   Int
 }
 
 model Stuff {

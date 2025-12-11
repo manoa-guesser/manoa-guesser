@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Table, Dropdown, DropdownButton } from 'react-bootstrap';
 import '../globals.css';
 
@@ -8,36 +8,40 @@ interface Player {
   id: number;
   name: string;
   score: number;
-  accuracy?: number;
-  average?: number;
-  createdAt?: string; // for time filtering later
+  average?: number | null;
+  createdAt?: string | null;
 }
 
 export default function LeaderboardPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [sortLabel, setSortLabel] = useState('Best Score');
-  const [sortType, setSortType] = useState<'score' | 'accuracy' | 'average'>('score');
+  const [sortType, setSortType] = useState<'score' | 'average'>('score');
 
-  // NEW
   const [timeLabel, setTimeLabel] = useState('All Time');
   const [timeFilter, setTimeFilter] = useState<'all' | 'week' | 'month'>('all');
 
+  // ===============================
+  // LOAD LEADERBOARD DATA
+  // ===============================
   useEffect(() => {
     const loadLeaderboard = async () => {
-      const res = await fetch('/api/leaderboard');
+      const res = await fetch('/api/leaderboard', { cache: 'no-store' });
       const data = await res.json();
 
       if (!Array.isArray(data)) return;
 
-      const formatted = data.map((player: any) => ({
+      const formatted: Player[] = data.map((player: any) => ({
         id: player.id,
         name: player.username,
         score: player.score,
 
-        accuracy: player.accuracy ?? null,
-        average: player.average ?? null,
+        // Clamp average to whole number
+        average:
+          player.average !== null && player.average !== undefined
+            ? Math.round(player.average)
+            : null,
 
-        createdAt: player.createdAt ?? new Date().toISOString(), // TEMP
+        createdAt: player.createdAt ?? null,
       }));
 
       setPlayers(formatted);
@@ -46,141 +50,146 @@ export default function LeaderboardPage() {
     loadLeaderboard();
   }, []);
 
-  // SORTING
-  const applySort = (type: 'score' | 'accuracy' | 'average', label: string) => {
+  // ===============================
+  // SORTING LOGIC
+  // ===============================
+  const applySort = useCallback((type: 'score' | 'average', label: string) => {
     setSortType(type);
     setSortLabel(label);
 
-    setPlayers((p) => [...p].sort((a, b) => {
+    setPlayers(prev => [...prev].sort((a, b) => {
       const A = (a as any)[type] ?? 0;
       const B = (b as any)[type] ?? 0;
       return B - A;
     }));
-  };
+  }, []);
 
-  // TIME FILTERING (dummy logic for now)
-  const filterByTime = (list: Player[]) => {
-    if (timeFilter === 'all') return list;
+  // ===============================
+  // DATE FILTERING
+  // ===============================
+  const filterByTime = useCallback(
+    (list: Player[]) => {
+      if (timeFilter === 'all') return list;
 
-    const now = new Date().getTime();
+      const now = Date.now();
+      const weekMs = 7 * 24 * 60 * 60 * 1000;
+      const monthMs = 30 * 24 * 60 * 60 * 1000;
 
-    return list.filter((p) => {
-      const created = new Date(p.createdAt!).getTime();
-      const diff = now - created;
+      return list.filter(player => {
+        if (!player.createdAt) return false;
 
-      if (timeFilter === 'week') return diff <= 7 * 24 * 60 * 60 * 1000;
-      if (timeFilter === 'month') return diff <= 30 * 24 * 60 * 60 * 1000;
-      return true;
-    });
-  };
+        const createdTime = new Date(player.createdAt).getTime();
+        const diff = now - createdTime;
 
-  // APPLY TIME FILTER BEFORE TOP 3 + TABLE
+        if (timeFilter === 'week') return diff <= weekMs;
+        if (timeFilter === 'month') return diff <= monthMs;
+        return true;
+      });
+    },
+    [timeFilter],
+  );
+
+  // ===============================
+  // APPLY FILTER + SORT
+  // ===============================
   const filtered = filterByTime(players);
 
-  const sorted = [...filtered].sort((a, b) => b.score - a.score);
+  const sorted = [...filtered].sort((a, b) => {
+    const A = (a as any)[sortType] ?? 0;
+    const B = (b as any)[sortType] ?? 0;
+    return B - A;
+  });
+
   const topThree = sorted.slice(0, 3);
   const rest = sorted.slice(3);
 
+  // ===============================
+  // RANK CARD HELPERS (no nested ternaries)
+  // ===============================
+  const getRankClass = (index: number) => {
+    if (index === 0) return 'top-first';
+    if (index === 1) return 'top-second';
+    return 'top-third';
+  };
+
+  const getMedal = (index: number) => {
+    if (index === 0) return '🥇';
+    if (index === 1) return '🥈';
+    return '🥉';
+  };
+
+  // ===============================
+  // RENDER
+  // ===============================
   return (
     <main className="leaderboard-bg">
       <h1 className="leaderboard-title">LEADERBOARD</h1>
 
-      {/* TOP THREE */}
+      {/* TOP THREE DISPLAY */}
       <div className="top-three-container">
-        {topThree[1] && (
-          <div className="top-card top-second">
-            <div className="medal">🥈</div>
-            <h3>{topThree[1].name}</h3>
-            <p>
-              Score:
-              {topThree[1].score}
-            </p>
-          </div>
-        )}
+        {topThree.map((player, index) => (
+          <div key={player.id} className={`top-card ${getRankClass(index)}`}>
+            <div className="medal">{getMedal(index)}</div>
 
-        {topThree[0] && (
-          <div className="top-card top-first">
-            <div className="medal">🥇</div>
-            <h3>{topThree[0].name}</h3>
-            <p>
-              Score:
-              {topThree[0].score}
-            </p>
-          </div>
-        )}
+            <h3>{player.name}</h3>
 
-        {topThree[2] && (
-          <div className="top-card top-third">
-            <div className="medal">🥉</div>
-            <h3>{topThree[2].name}</h3>
-            <p>
-              Score:
-              {topThree[2].score}
-            </p>
+            {sortType === 'score' && (
+              <p>
+                Score:
+                <strong>{player.score}</strong>
+              </p>
+            )}
+
+            {sortType === 'average' && (
+              <p>
+                Average:
+                <strong>{player.average ?? '—'}</strong>
+              </p>
+            )}
           </div>
-        )}
+        ))}
       </div>
 
-      {/* LEADERBOARD CARD */}
+      {/* TABLE */}
       <div className="leaderboard-card">
-        {/* FILTER BAR WITH TWO DROPDOWNS */}
         <div className="filter-bar">
-          {/* SORT */}
-          <DropdownButton id="sort-dropdown" title={sortLabel} variant="success" className="leaderboard-dropdown px-3">
-            <Dropdown.Item onClick={() => applySort('score', 'Best Score')}>Best Score</Dropdown.Item>
-
-            <Dropdown.Item onClick={() => applySort('average', 'Average Performance')}>
-              Average Performance
+          {/* SORT DROPDOWN */}
+          <DropdownButton id="sort-dropdown" title={sortLabel} variant="success">
+            <Dropdown.Item onClick={() => applySort('score', 'Best Score')}>
+              Best Score
             </Dropdown.Item>
-
-            <Dropdown.Item onClick={() => applySort('accuracy', 'Accuracy')}>Accuracy</Dropdown.Item>
+            <Dropdown.Item onClick={() => applySort('average', 'Best Average')}>
+              Best Average
+            </Dropdown.Item>
           </DropdownButton>
 
-          {/* TIME FILTER */}
+          {/* TIME DROPDOWN */}
           <DropdownButton
             id="time-dropdown"
             title={timeLabel}
             variant="secondary"
-            className="leaderboard-dropdown px-3 ms-3"
+            className="ms-3"
           >
-            <Dropdown.Item
-              onClick={() => {
-                setTimeFilter('all');
-                setTimeLabel('All Time');
-              }}
-            >
+            <Dropdown.Item onClick={() => { setTimeFilter('all'); setTimeLabel('All Time'); }}>
               All Time
             </Dropdown.Item>
-
-            <Dropdown.Item
-              onClick={() => {
-                setTimeFilter('week');
-                setTimeLabel('Past Week');
-              }}
-            >
+            <Dropdown.Item onClick={() => { setTimeFilter('week'); setTimeLabel('Past Week'); }}>
               Past Week
             </Dropdown.Item>
-
-            <Dropdown.Item
-              onClick={() => {
-                setTimeFilter('month');
-                setTimeLabel('Past Month');
-              }}
-            >
+            <Dropdown.Item onClick={() => { setTimeFilter('month'); setTimeLabel('Past Month'); }}>
               Past Month
             </Dropdown.Item>
           </DropdownButton>
         </div>
 
-        {/* TABLE */}
+        {/* TABLE DATA */}
         <Table striped bordered hover responsive="md" className="shadow-sm">
-          <thead className="leaderboard-table-head">
+          <thead>
             <tr>
               <th>#</th>
               <th>Player</th>
 
               {sortType === 'score' && <th>Best Score</th>}
-              {sortType === 'accuracy' && <th>Accuracy</th>}
               {sortType === 'average' && <th>Average</th>}
             </tr>
           </thead>
@@ -192,7 +201,6 @@ export default function LeaderboardPage() {
                 <td>{player.name}</td>
 
                 {sortType === 'score' && <td>{player.score}</td>}
-                {sortType === 'accuracy' && <td>{player.accuracy ?? '—'}</td>}
                 {sortType === 'average' && <td>{player.average ?? '—'}</td>}
               </tr>
             ))}

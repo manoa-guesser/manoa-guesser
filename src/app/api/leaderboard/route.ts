@@ -1,27 +1,31 @@
 /* eslint-disable import/prefer-default-export */
 
-import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
-  try {
-    const players = await prisma.user.findMany({
-      select: {
-        id: true,
-        username: true,
-        score: true,
-      },
-      orderBy: {
-        score: 'desc',
-      },
-    });
+  const users = await prisma.user.findMany({
+    include: { scores: true },
+  });
 
-    return NextResponse.json(players);
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { error: 'Failed to load leaderboard' },
-      { status: 500 },
-    );
-  }
+  const formatted = users.map((u) => {
+    const scores = u.scores.map((s) => s.value);
+
+    const best = scores.length ? Math.max(...scores) : 0;
+    const average = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    const accuracy = scores.length ? (scores.filter((v) => v > 0).length / scores.length) * 100 : 0;
+
+    const createdAt = u.scores[0]?.createdAt ?? null;
+
+    return {
+      id: u.id,
+      username: u.username,
+      score: best,
+      average,
+      accuracy,
+      createdAt,
+    };
+  });
+
+  return NextResponse.json(formatted);
 }
