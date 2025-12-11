@@ -21,7 +21,6 @@ const EditUserForm = ({ user }: { user: User }) => {
       email: user.email,
       username: user.username,
       role: user.role as 'USER' | 'ADMIN',
-      score: user.score,
     },
   });
 
@@ -68,17 +67,6 @@ const EditUserForm = ({ user }: { user: User }) => {
                     <option value="ADMIN">Admin</option>
                   </Form.Select>
                   {errors.role && <Form.Control.Feedback type="invalid">{errors.role.message}</Form.Control.Feedback>}
-                </Form.Group>
-
-                {/* Score */}
-                <Form.Group className="mb-3">
-                  <Form.Label>Score</Form.Label>
-                  <Form.Control
-                    type="number"
-                    {...register('score', { valueAsNumber: true })}
-                    isInvalid={!!errors.score}
-                  />
-                  {errors.score && <Form.Control.Feedback type="invalid">{errors.score.message}</Form.Control.Feedback>}
                 </Form.Group>
 
                 {/* Buttons */}
