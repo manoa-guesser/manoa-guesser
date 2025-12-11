@@ -19,7 +19,6 @@ const AdminPage = async () => {
   const users = await prisma.user.findMany({});
   const adminCount = users.filter((user) => user.role === 'ADMIN').length;
   const totalSubmissions = await prisma.submission.count();
-  
   // Pending submissions
   const pendingSubmissions = await prisma.submission.findMany({
     where: { status: 'PENDING' },
