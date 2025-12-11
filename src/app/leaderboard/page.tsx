@@ -69,12 +69,11 @@ export default function LeaderboardPage() {
   // Sorting logic (centralized)
   // -------------------------------
   const sorted = useMemo(
-    () =>
-      [...filtered].sort((a, b) => {
-        const A = a[sortType] ?? 0;
-        const B = b[sortType] ?? 0;
-        return B - A;
-      }),
+    () => [...filtered].sort((a, b) => {
+      const A = a[sortType] ?? 0;
+      const B = b[sortType] ?? 0;
+      return B - A;
+    }),
     [filtered, sortType],
   );
   const topThree = sorted.slice(0, 3);
