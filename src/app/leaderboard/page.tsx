@@ -1,8 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Table, Dropdown, DropdownButton } from 'react-bootstrap';
 import '../globals.css';
+
+const TIME_LIMITS = {
+  week: 7 * 24 * 60 * 60 * 1000,
+  month: 30 * 24 * 60 * 60 * 1000,
+} as const;
 
 interface Player {
   id: number;
@@ -14,194 +19,170 @@ interface Player {
 
 export default function LeaderboardPage() {
   const [players, setPlayers] = useState<Player[]>([]);
-  const [sortLabel, setSortLabel] = useState('Best Score');
   const [sortType, setSortType] = useState<'score' | 'average'>('score');
+  const [sortLabel, setSortLabel] = useState('Best Score');
 
-  const [timeLabel, setTimeLabel] = useState('All Time');
   const [timeFilter, setTimeFilter] = useState<'all' | 'week' | 'month'>('all');
+  const [timeLabel, setTimeLabel] = useState('All Time');
 
-  // ===============================
-  // LOAD LEADERBOARD DATA
-  // ===============================
+  // -------------------------------
+  // Load leaderboard data
+  // -------------------------------
   useEffect(() => {
-    const loadLeaderboard = async () => {
+    async function load() {
       const res = await fetch('/api/leaderboard', { cache: 'no-store' });
       const data = await res.json();
 
       if (!Array.isArray(data)) return;
 
-      const formatted: Player[] = data.map((player: any) => ({
-        id: player.id,
-        name: player.username,
-        score: player.score,
+      setPlayers(
+        data.map((p: any) => ({
+          id: p.id,
+          name: p.username,
+          score: p.score,
+          average: p.average != null ? Math.round(p.average) : null,
+          createdAt: p.createdAt ?? null,
+        })),
+      );
+    }
 
-        // Clamp average to whole number
-        average:
-          player.average !== null && player.average !== undefined
-            ? Math.round(player.average)
-            : null,
-
-        createdAt: player.createdAt ?? null,
-      }));
-
-      setPlayers(formatted);
-    };
-
-    loadLeaderboard();
+    load();
   }, []);
 
-  // ===============================
-  // SORTING LOGIC
-  // ===============================
-  const applySort = useCallback((type: 'score' | 'average', label: string) => {
-    setSortType(type);
-    setSortLabel(label);
+  // -------------------------------
+  // Time filter logic (clean + compact)
+  // -------------------------------
 
-    setPlayers(prev => [...prev].sort((a, b) => {
-      const A = (a as any)[type] ?? 0;
-      const B = (b as any)[type] ?? 0;
-      return B - A;
-    }));
-  }, []);
+  const filtered = useMemo(() => {
+    if (timeFilter === 'all') return players;
 
-  // ===============================
-  // DATE FILTERING
-  // ===============================
-  const filterByTime = useCallback(
-    (list: Player[]) => {
-      if (timeFilter === 'all') return list;
+    const now = Date.now();
+    const limit = TIME_LIMITS[timeFilter];
 
-      const now = Date.now();
-      const weekMs = 7 * 24 * 60 * 60 * 1000;
-      const monthMs = 30 * 24 * 60 * 60 * 1000;
+    return players.filter((p) => {
+      if (!p.createdAt) return false;
+      return now - new Date(p.createdAt).getTime() <= limit;
+    });
+  }, [players, timeFilter]);
 
-      return list.filter(player => {
-        if (!player.createdAt) return false;
-
-        const createdTime = new Date(player.createdAt).getTime();
-        const diff = now - createdTime;
-
-        if (timeFilter === 'week') return diff <= weekMs;
-        if (timeFilter === 'month') return diff <= monthMs;
-        return true;
-      });
-    },
-    [timeFilter],
+  // -------------------------------
+  // Sorting logic (centralized)
+  // -------------------------------
+  const sorted = useMemo(
+    () =>
+      [...filtered].sort((a, b) => {
+        const A = a[sortType] ?? 0;
+        const B = b[sortType] ?? 0;
+        return B - A;
+      }),
+    [filtered, sortType],
   );
-
-  // ===============================
-  // APPLY FILTER + SORT
-  // ===============================
-  const filtered = filterByTime(players);
-
-  const sorted = [...filtered].sort((a, b) => {
-    const A = (a as any)[sortType] ?? 0;
-    const B = (b as any)[sortType] ?? 0;
-    return B - A;
-  });
-
   const topThree = sorted.slice(0, 3);
   const rest = sorted.slice(3);
 
-  // ===============================
-  // RANK CARD HELPERS (no nested ternaries)
-  // ===============================
-  const getRankClass = (index: number) => {
-    if (index === 0) return 'top-first';
-    if (index === 1) return 'top-second';
+  // -------------------------------
+  // Helper functions
+  // -------------------------------
+  const getRankClass = (i: number) => {
+    if (i === 0) return 'top-first';
+    if (i === 1) return 'top-second';
     return 'top-third';
   };
 
-  const getMedal = (index: number) => {
-    if (index === 0) return '🥇';
-    if (index === 1) return '🥈';
+  const getMedal = (i: number) => {
+    if (i === 0) return '🥇';
+    if (i === 1) return '🥈';
     return '🥉';
   };
 
-  // ===============================
-  // RENDER
-  // ===============================
+  const handleSort = (type: 'score' | 'average', label: string) => {
+    setSortType(type);
+    setSortLabel(label);
+  };
+
+  const handleTime = (filter: 'all' | 'week' | 'month', label: string) => {
+    setTimeFilter(filter);
+    setTimeLabel(label);
+  };
+
+  // -------------------------------
+  // Render
+  // -------------------------------
   return (
-    <main className="leaderboard-bg">
+    <main className="leaderboard-bg confetti-wrapper">
+      <div className="confetti-left" />
+      <div className="confetti-right" />
+
       <h1 className="leaderboard-title">LEADERBOARD</h1>
 
-      {/* TOP THREE DISPLAY */}
+      {/* TOP THREE */}
       <div className="top-three-container">
-        {topThree.map((player, index) => (
-          <div key={player.id} className={`top-card ${getRankClass(index)}`}>
-            <div className="medal">{getMedal(index)}</div>
-
-            <h3>{player.name}</h3>
+        {topThree.map((p, i) => (
+          <div key={p.id} className={`top-card ${getRankClass(i)}`}>
+            <div className="medal">{getMedal(i)}</div>
+            <h3>{p.name}</h3>
 
             {sortType === 'score' && (
               <p>
                 Score:
-                <strong>{player.score}</strong>
+                <strong>
+                  {p.score}
+                </strong>
               </p>
             )}
 
             {sortType === 'average' && (
               <p>
                 Average:
-                <strong>{player.average ?? '—'}</strong>
+                <strong>
+                  {p.average ?? '—'}
+                </strong>
               </p>
             )}
           </div>
         ))}
       </div>
 
-      {/* TABLE */}
+      {/* MAIN TABLE */}
       <div className="leaderboard-card">
         <div className="filter-bar">
-          {/* SORT DROPDOWN */}
-          <DropdownButton id="sort-dropdown" title={sortLabel} variant="success">
-            <Dropdown.Item onClick={() => applySort('score', 'Best Score')}>
+          <DropdownButton title={sortLabel} variant="success">
+            <Dropdown.Item onClick={() => handleSort('score', 'Best Score')}>
               Best Score
             </Dropdown.Item>
-            <Dropdown.Item onClick={() => applySort('average', 'Best Average')}>
+            <Dropdown.Item onClick={() => handleSort('average', 'Best Average')}>
               Best Average
             </Dropdown.Item>
           </DropdownButton>
 
-          {/* TIME DROPDOWN */}
-          <DropdownButton
-            id="time-dropdown"
-            title={timeLabel}
-            variant="secondary"
-            className="ms-3"
-          >
-            <Dropdown.Item onClick={() => { setTimeFilter('all'); setTimeLabel('All Time'); }}>
+          <DropdownButton title={timeLabel} variant="secondary" className="ms-3">
+            <Dropdown.Item onClick={() => handleTime('all', 'All Time')}>
               All Time
             </Dropdown.Item>
-            <Dropdown.Item onClick={() => { setTimeFilter('week'); setTimeLabel('Past Week'); }}>
+            <Dropdown.Item onClick={() => handleTime('week', 'Past Week')}>
               Past Week
             </Dropdown.Item>
-            <Dropdown.Item onClick={() => { setTimeFilter('month'); setTimeLabel('Past Month'); }}>
+            <Dropdown.Item onClick={() => handleTime('month', 'Past Month')}>
               Past Month
             </Dropdown.Item>
           </DropdownButton>
         </div>
 
-        {/* TABLE DATA */}
         <Table striped bordered hover responsive="md" className="shadow-sm">
           <thead>
             <tr>
               <th>#</th>
               <th>Player</th>
-
-              {sortType === 'score' && <th>Best Score</th>}
-              {sortType === 'average' && <th>Average</th>}
+              <th>{sortType === 'score' ? 'Best Score' : 'Average'}</th>
             </tr>
           </thead>
 
           <tbody>
-            {rest.map((player, index) => (
-              <tr key={player.id}>
-                <td>{index + 4}</td>
-                <td>{player.name}</td>
-
-                {sortType === 'score' && <td>{player.score}</td>}
-                {sortType === 'average' && <td>{player.average ?? '—'}</td>}
+            {rest.map((p, i) => (
+              <tr key={p.id}>
+                <td>{i + 4}</td>
+                <td>{p.name}</td>
+                <td>{sortType === 'score' ? p.score : p.average ?? '—'}</td>
               </tr>
             ))}
           </tbody>
