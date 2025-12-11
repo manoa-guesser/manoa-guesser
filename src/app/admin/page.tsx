@@ -76,7 +76,7 @@ const AdminPage = async () => {
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h2 className="fw-bold mb-1 hero-subtitle">Players Information</h2>
-                  <p className="text-muted mb-0">View all users along with their usernames, roles, and scores.</p>
+                  <p className="text-muted mb-0">View all users along with their usernames, and roles.</p>
                 </div>
                 <Badge bg="success" pill>
                   {users.length}
@@ -90,7 +90,6 @@ const AdminPage = async () => {
                     <th>Email</th>
                     <th>Username</th>
                     <th>Role</th>
-                    <th>Score</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -100,7 +99,6 @@ const AdminPage = async () => {
                       <td>{user.email}</td>
                       <td>{user.username ?? '-'}</td>
                       <td>{user.role}</td>
-                      <td>{user.score}</td>
                       <td>
                         <Link href={`/edit/${user.id}`}>
                           <Button variant="outline-primary" size="sm">
