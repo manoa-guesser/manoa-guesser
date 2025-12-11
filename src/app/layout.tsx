@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: 'Manoa Guesser',
   description:
     'A fun geography guessing game focused on the University of Hawaii at Manoa campus and surrounding areas.',
-  icons: 'favicon.ico',
+  icons: 'logo.ico',
 };
 
 export default function RootLayout({
