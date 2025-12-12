@@ -3,6 +3,10 @@
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0; // disable ISR caching
+export const fetchCache = 'force-no-store';
+
 export async function GET() {
   const users = await prisma.user.findMany({
     include: { scores: true },
